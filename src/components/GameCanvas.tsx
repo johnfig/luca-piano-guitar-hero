@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import Renderer from '@/engine/Renderer';
-import { ActiveNote, Particle, HitEffect } from '@/types/game';
+import { ActiveNote, Particle, HitEffect, MidiNote } from '@/types/game';
 
 interface GameCanvasProps {
   notes: ActiveNote[];
@@ -12,6 +12,7 @@ interface GameCanvasProps {
   crescendoActive: boolean;
   bpm: number;
   songProgress: number;
+  activeLanes: MidiNote[];
 }
 
 export default function GameCanvas({
@@ -22,6 +23,7 @@ export default function GameCanvas({
   crescendoActive,
   bpm,
   songProgress,
+  activeLanes,
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<Renderer | null>(null);
@@ -35,6 +37,11 @@ export default function GameCanvas({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Update lane config when activeLanes change
+  useEffect(() => {
+    rendererRef.current?.setLaneConfig(activeLanes);
+  }, [activeLanes]);
 
   // Render frame
   const renderFrame = useCallback(() => {

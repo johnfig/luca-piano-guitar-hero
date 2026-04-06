@@ -1,5 +1,5 @@
-import { PianoKey } from '@/types/game';
-import { NOTE_FREQUENCIES } from '@/constants/keyboard';
+import { MidiNote } from '@/types/game';
+import { midiNoteToFrequency } from '@/constants/keyboard';
 
 class AudioEngine {
   private static instance: AudioEngine;
@@ -42,10 +42,13 @@ class AudioEngine {
     }
   }
 
-  playNote(note: PianoKey, duration: number = 0.3): void {
+  playNote(midiNote: MidiNote, duration: number = 0.3, velocity: number = 100): void {
     const ctx = this.ensureContext();
-    const freq = NOTE_FREQUENCIES[note];
+    const freq = midiNoteToFrequency(midiNote);
     const now = ctx.currentTime;
+
+    // Scale volume by velocity (0-127 MIDI range)
+    const velScale = Math.max(0.2, velocity / 127);
 
     // ADSR envelope parameters
     const attack = 0.005;
@@ -64,11 +67,11 @@ class AudioEngine {
     saw.connect(sawGain);
     sawGain.connect(this.masterGain!);
 
-    // Envelope for sawtooth
+    const sawVol = 0.08 * velScale;
     sawGain.gain.setValueAtTime(0, now);
-    sawGain.gain.linearRampToValueAtTime(0.08, now + attack);
-    sawGain.gain.linearRampToValueAtTime(0.08 * sustainLevel, now + attack + decay);
-    sawGain.gain.setValueAtTime(0.08 * sustainLevel, noteEnd);
+    sawGain.gain.linearRampToValueAtTime(sawVol, now + attack);
+    sawGain.gain.linearRampToValueAtTime(sawVol * sustainLevel, now + attack + decay);
+    sawGain.gain.setValueAtTime(sawVol * sustainLevel, noteEnd);
     sawGain.gain.linearRampToValueAtTime(0, noteEnd + release);
 
     // --- Layer 2: Triangle (main tone) ---
@@ -81,11 +84,11 @@ class AudioEngine {
     tri.connect(triGain);
     triGain.connect(this.masterGain!);
 
-    // Envelope for triangle
+    const triVol = 0.25 * velScale;
     triGain.gain.setValueAtTime(0, now);
-    triGain.gain.linearRampToValueAtTime(0.25, now + attack);
-    triGain.gain.linearRampToValueAtTime(0.25 * sustainLevel, now + attack + decay);
-    triGain.gain.setValueAtTime(0.25 * sustainLevel, noteEnd);
+    triGain.gain.linearRampToValueAtTime(triVol, now + attack);
+    triGain.gain.linearRampToValueAtTime(triVol * sustainLevel, now + attack + decay);
+    triGain.gain.setValueAtTime(triVol * sustainLevel, noteEnd);
     triGain.gain.linearRampToValueAtTime(0, noteEnd + release);
 
     // --- Layer 3: Sine at 2x frequency (brightness/harmonic) ---
@@ -97,11 +100,11 @@ class AudioEngine {
     sine.connect(sineGain);
     sineGain.connect(this.masterGain!);
 
-    // Envelope for harmonic sine
+    const sineVol = 0.12 * velScale;
     sineGain.gain.setValueAtTime(0, now);
-    sineGain.gain.linearRampToValueAtTime(0.12, now + attack);
-    sineGain.gain.linearRampToValueAtTime(0.12 * sustainLevel, now + attack + decay);
-    sineGain.gain.setValueAtTime(0.12 * sustainLevel, noteEnd);
+    sineGain.gain.linearRampToValueAtTime(sineVol, now + attack);
+    sineGain.gain.linearRampToValueAtTime(sineVol * sustainLevel, now + attack + decay);
+    sineGain.gain.setValueAtTime(sineVol * sustainLevel, noteEnd);
     sineGain.gain.linearRampToValueAtTime(0, noteEnd + release);
 
     // Start and stop all oscillators
@@ -141,7 +144,6 @@ class AudioEngine {
     const ctx = this.ensureContext();
     const now = ctx.currentTime;
 
-    // Higher pitch for bigger combo milestones
     const baseFreq = combo === 10 ? 600 : combo === 25 ? 800 : 1000;
     const noteCount = combo === 10 ? 2 : combo === 25 ? 3 : 4;
 
@@ -169,7 +171,6 @@ class AudioEngine {
     const ctx = this.ensureContext();
     const now = ctx.currentTime;
 
-    // Rising sweep effect
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -195,6 +196,83 @@ class AudioEngine {
     osc1.stop(now + 0.55);
     osc2.start(now);
     osc2.stop(now + 0.55);
+  }
+
+  // --- Gamification Sound Effects ---
+
+  playStarEarned(starNumber: number): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+    const baseFreq = 800 + starNumber * 200;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.linearRampToValueAtTime(baseFreq * 1.5, now + 0.15);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.02);
+    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain!);
+
+    osc.start(now);
+    osc.stop(now + 0.35);
+  }
+
+  playLevelUp(): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+    const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t = now + i * 0.12;
+
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.12, t + 0.02);
+      gain.gain.linearRampToValueAtTime(0, t + 0.25);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain!);
+      osc.start(t);
+      osc.stop(t + 0.3);
+    });
+  }
+
+  playBadgeEarned(): void {
+    const ctx = this.ensureContext();
+    const now = ctx.currentTime;
+
+    // Triumphant fanfare
+    const freqs = [440, 554, 659, 880]; // A4, C#5, E5, A5
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const t = now + i * 0.1;
+
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.1, t + 0.02);
+      gain.gain.linearRampToValueAtTime(i === 3 ? 0.1 : 0, t + 0.2);
+      if (i === 3) {
+        gain.gain.linearRampToValueAtTime(0, t + 0.6);
+      }
+
+      osc.connect(gain);
+      gain.connect(this.masterGain!);
+      osc.start(t);
+      osc.stop(t + (i === 3 ? 0.65 : 0.25));
+    });
   }
 
   isInitialized(): boolean {

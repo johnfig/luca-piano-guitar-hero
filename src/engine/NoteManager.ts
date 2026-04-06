@@ -1,28 +1,28 @@
-import { PianoKey, Song, ActiveNote, HitRating } from '@/types/game';
-import { NOTE_TO_LANE } from '@/constants/keyboard';
+import { MidiNote, Song, ActiveNote, HitRating } from '@/types/game';
 import { HIT_WINDOWS } from '@/constants/scoring';
 import { MISS_WINDOW } from '@/constants/timing';
 
 class NoteManager {
   private song: Song;
+  private noteToLane: Map<MidiNote, number>;
   private activeNotes: ActiveNote[] = [];
   private nextNoteIndex = 0;
   private noteIdCounter = 0;
 
-  constructor(song: Song) {
+  constructor(song: Song, noteToLane: Map<MidiNote, number>) {
     this.song = song;
+    this.noteToLane = noteToLane;
   }
 
   update(currentTime: number, fallDuration: number): void {
     // Spawn notes that should now be visible.
     // A note becomes visible when currentTime >= note.time - fallDuration
-    // (that is, it needs to start falling so it arrives at y=1 at note.time).
     while (
       this.nextNoteIndex < this.song.notes.length &&
       currentTime >= this.song.notes[this.nextNoteIndex].time - fallDuration
     ) {
       const songNote = this.song.notes[this.nextNoteIndex];
-      const lane = NOTE_TO_LANE[songNote.note];
+      const lane = this.noteToLane.get(songNote.note) ?? 0;
 
       this.activeNotes.push({
         id: this.noteIdCounter++,
@@ -67,10 +67,11 @@ class NoteManager {
   }
 
   checkHit(
-    note: PianoKey,
+    midiNote: MidiNote,
     currentTime: number
   ): { note: ActiveNote; rating: HitRating } | null {
-    const lane = NOTE_TO_LANE[note];
+    const lane = this.noteToLane.get(midiNote);
+    if (lane === undefined) return null;
 
     // Find un-hit notes in this lane, sorted by closest to the target time
     const candidates = this.activeNotes
@@ -111,12 +112,10 @@ class NoteManager {
   isComplete(currentTime: number): boolean {
     if (this.song.notes.length === 0) return true;
 
-    // All notes have been spawned and all have been hit or missed
     const allSpawned = this.nextNoteIndex >= this.song.notes.length;
     const allProcessed = this.activeNotes.every((n) => n.hit || n.missed);
     const lastNoteTime = this.song.notes[this.song.notes.length - 1].time;
 
-    // Also check that we are past the last note by a margin
     return allSpawned && allProcessed && currentTime > lastNoteTime + MISS_WINDOW + 0.5;
   }
 

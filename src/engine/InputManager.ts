@@ -1,7 +1,7 @@
-import { PianoKey } from '@/types/game';
-import { KEY_MAP, NOTE_TO_LANE } from '@/constants/keyboard';
+import { MidiNote } from '@/types/game';
+import { buildKeyboardMap, buildNoteToLane, getActiveLanes, DEFAULT_NOTE_RANGE } from '@/constants/keyboard';
 
-export type NoteCallback = (note: PianoKey, lane: number) => void;
+export type NoteCallback = (midiNote: MidiNote, lane: number) => void;
 
 class InputManager {
   private pressedKeys: Set<string> = new Set();
@@ -9,33 +9,54 @@ class InputManager {
   private onKeyUpCallback: NoteCallback | null = null;
   private active = false;
 
+  // Dynamic mappings (rebuilt per song)
+  private keyboardMap: Record<string, MidiNote>;
+  private noteToLane: Map<MidiNote, number>;
+
+  constructor() {
+    // Default to the original 8-lane layout
+    const defaultLanes = getActiveLanes(DEFAULT_NOTE_RANGE);
+    this.keyboardMap = buildKeyboardMap(defaultLanes);
+    this.noteToLane = buildNoteToLane(defaultLanes);
+  }
+
+  /**
+   * Set active lanes for the current song. Rebuilds keyboard mapping.
+   */
+  setActiveLanes(activeLanes: MidiNote[]): void {
+    this.keyboardMap = buildKeyboardMap(activeLanes);
+    this.noteToLane = buildNoteToLane(activeLanes);
+  }
+
   private handleKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) return;
 
     const key = event.key.toLowerCase();
-    const note = KEY_MAP[key];
+    const midiNote = this.keyboardMap[key];
 
-    if (!note) return;
+    if (midiNote === undefined) return;
 
     event.preventDefault();
     this.pressedKeys.add(key);
 
-    if (this.onKeyDownCallback) {
-      this.onKeyDownCallback(note, NOTE_TO_LANE[note]);
+    const lane = this.noteToLane.get(midiNote);
+    if (lane !== undefined && this.onKeyDownCallback) {
+      this.onKeyDownCallback(midiNote, lane);
     }
   };
 
   private handleKeyUp = (event: KeyboardEvent): void => {
     const key = event.key.toLowerCase();
-    const note = KEY_MAP[key];
+    const midiNote = this.keyboardMap[key];
 
-    if (!note) return;
+    if (midiNote === undefined) return;
 
     event.preventDefault();
     this.pressedKeys.delete(key);
 
-    if (this.onKeyUpCallback) {
-      this.onKeyUpCallback(note, NOTE_TO_LANE[note]);
+    const lane = this.noteToLane.get(midiNote);
+    if (lane !== undefined && this.onKeyUpCallback) {
+      this.onKeyUpCallback(midiNote, lane);
     }
   };
 
@@ -47,15 +68,15 @@ class InputManager {
     this.onKeyUpCallback = callback;
   }
 
-  isPressed(note: PianoKey): boolean {
-    const entry = Object.entries(KEY_MAP).find(([, n]) => n === note);
+  isPressed(midiNote: MidiNote): boolean {
+    const entry = Object.entries(this.keyboardMap).find(([, n]) => n === midiNote);
     return entry ? this.pressedKeys.has(entry[0]) : false;
   }
 
-  getPressedNotes(): PianoKey[] {
+  getPressedNotes(): MidiNote[] {
     return Array.from(this.pressedKeys)
-      .map((key) => KEY_MAP[key])
-      .filter((note): note is PianoKey => note !== undefined);
+      .map((key) => this.keyboardMap[key])
+      .filter((note): note is MidiNote => note !== undefined);
   }
 
   start(): void {

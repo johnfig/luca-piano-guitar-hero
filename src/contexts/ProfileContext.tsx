@@ -1,0 +1,133 @@
+'use client';
+
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { UserProfile, GameStats, Grade, Difficulty } from '@/types/game';
+import {
+  loadAllProfiles,
+  loadActiveProfile,
+  saveProfile,
+  createProfile,
+  setActiveProfileId,
+  updateSongProgress,
+  updateStreak,
+  addXP,
+} from '@/lib/storage';
+import { calculateXPFromResult } from '@/lib/xp';
+
+interface ProfileContextValue {
+  profile: UserProfile | null;
+  allProfiles: UserProfile[];
+  isNewUser: boolean;
+  isLoading: boolean;
+
+  // Profile management
+  createNewProfile: (name: string, avatarIndex: number) => UserProfile;
+  switchProfile: (id: string) => void;
+
+  // Game results
+  recordSongResult: (
+    songId: string,
+    stats: GameStats,
+    grade: Grade,
+    difficulty: Difficulty,
+  ) => { xpEarned: number; leveledUp: boolean; isFirstClear: boolean };
+
+  // Manual profile updates
+  updateProfile: (updater: (prev: UserProfile) => UserProfile) => void;
+}
+
+const ProfileContext = createContext<ProfileContextValue | null>(null);
+
+export function ProfileProvider({ children }: { children: ReactNode }) {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [allProfiles, setAllProfiles] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load on mount
+  useEffect(() => {
+    const profiles = loadAllProfiles();
+    const active = loadActiveProfile();
+    setAllProfiles(profiles);
+    setProfile(active);
+    setIsLoading(false);
+  }, []);
+
+  const isNewUser = !isLoading && allProfiles.length === 0;
+
+  const createNewProfile = useCallback((name: string, avatarIndex: number): UserProfile => {
+    const newProfile = createProfile(name, avatarIndex);
+    setProfile(newProfile);
+    setAllProfiles(prev => [...prev, newProfile]);
+    return newProfile;
+  }, []);
+
+  const switchProfile = useCallback((id: string) => {
+    const profiles = loadAllProfiles();
+    const target = profiles.find(p => p.id === id);
+    if (target) {
+      setActiveProfileId(id);
+      setProfile(target);
+      setAllProfiles(profiles);
+    }
+  }, []);
+
+  const updateProfileInternal = useCallback((updater: (prev: UserProfile) => UserProfile) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      const updated = updater(prev);
+      saveProfile(updated);
+      setAllProfiles(profiles => profiles.map(p => p.id === updated.id ? updated : p));
+      return updated;
+    });
+  }, []);
+
+  const recordSongResult = useCallback((
+    songId: string,
+    stats: GameStats,
+    grade: Grade,
+    difficulty: Difficulty,
+  ) => {
+    if (!profile) return { xpEarned: 0, leveledUp: false, isFirstClear: false };
+
+    const isFirstClear = !profile.songProgress[songId]?.timesCompleted && grade !== 'F';
+    const xpEarned = calculateXPFromResult(stats, grade, difficulty, isFirstClear);
+    const oldLevel = profile.level;
+
+    let updated = updateSongProgress(profile, songId, stats, grade);
+    updated = updateStreak(updated);
+    updated = addXP(updated, xpEarned);
+
+    const leveledUp = updated.level > oldLevel;
+
+    saveProfile(updated);
+    setProfile(updated);
+    setAllProfiles(profiles => profiles.map(p => p.id === updated.id ? updated : p));
+
+    return { xpEarned, leveledUp, isFirstClear };
+  }, [profile]);
+
+  return (
+    <ProfileContext.Provider
+      value={{
+        profile,
+        allProfiles,
+        isNewUser,
+        isLoading,
+        createNewProfile,
+        switchProfile,
+        recordSongResult,
+        updateProfile: updateProfileInternal,
+      }}
+    >
+      {children}
+    </ProfileContext.Provider>
+  );
+}
+
+export function useProfile() {
+  const ctx = useContext(ProfileContext);
+  if (!ctx) {
+    throw new Error('useProfile must be used within a ProfileProvider');
+  }
+  return ctx;
+}

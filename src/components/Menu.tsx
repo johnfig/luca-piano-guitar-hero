@@ -1,10 +1,15 @@
 'use client';
 
-import { Song } from '@/types/game';
+import { Song, UserProfile } from '@/types/game';
 import { songs } from '@/songs';
+import { xpToNextLevel } from '@/lib/storage';
+
+const AVATARS = ['🎹', '🎵', '🎶', '🎸', '🎻', '🎺', '🥁', '🎤', '🦊', '🐱', '🐶', '🦁'];
 
 interface MenuProps {
   onSelectSong: (song: Song) => void;
+  profile: UserProfile | null;
+  onSwitchProfile: () => void;
 }
 
 const difficultyColors = {
@@ -13,11 +18,49 @@ const difficultyColors = {
   Hard: 'text-red-400 border-red-400/30',
 };
 
-export default function Menu({ onSelectSong }: MenuProps) {
+export default function Menu({ onSelectSong, profile, onSwitchProfile }: MenuProps) {
+  const xpProgress = profile ? xpToNextLevel(profile) : null;
+  const avatar = profile ? (AVATARS[profile.avatarIndex] ?? '🎹') : '🎹';
+
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0a1a] z-50">
+    <div className="fixed inset-0 flex flex-col items-center bg-[#0a0a1a] z-50 overflow-y-auto">
+      {/* Profile bar */}
+      {profile && (
+        <div className="w-full max-w-lg px-4 pt-4">
+          <button
+            onClick={onSwitchProfile}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+          >
+            <span className="text-2xl">{avatar}</span>
+            <div className="flex-1 text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold">{profile.displayName}</span>
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300">
+                  Lv.{profile.level}
+                </span>
+                {profile.currentStreak > 0 && (
+                  <span className="text-orange-400 text-xs">🔥 {profile.currentStreak}</span>
+                )}
+              </div>
+              {xpProgress && (
+                <div className="mt-1 flex items-center gap-2">
+                  <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                      style={{ width: `${xpProgress.needed > 0 ? (xpProgress.current / xpProgress.needed) * 100 : 100}%` }}
+                    />
+                  </div>
+                  <span className="text-gray-600 text-xs">{xpProgress.current}/{xpProgress.needed} XP</span>
+                </div>
+              )}
+            </div>
+            <span className="text-gray-600 text-xs">Switch</span>
+          </button>
+        </div>
+      )}
+
       {/* Title */}
-      <div className="mb-12 text-center">
+      <div className="mb-8 mt-8 text-center">
         <h1 className="text-7xl font-black tracking-tight mb-2">
           <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
             PIANO
@@ -30,41 +73,65 @@ export default function Menu({ onSelectSong }: MenuProps) {
       </div>
 
       {/* Song list */}
-      <div className="w-full max-w-lg space-y-3 px-4">
+      <div className="w-full max-w-lg space-y-3 px-4 pb-8">
         <h2 className="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-4">
           Select a Song
         </h2>
-        {songs.map((song) => (
-          <button
-            key={song.id}
-            onClick={() => onSelectSong(song)}
-            className="w-full group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-white font-semibold text-lg group-hover:text-white/90">
-                  {song.title}
-                </h3>
-                <p className="text-gray-500 text-sm">{song.artist}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-gray-500 text-xs">{song.notes.length} notes</span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${difficultyColors[song.difficulty]}`}
-                >
-                  {song.difficulty}
-                </span>
-              </div>
-            </div>
+        {songs.map((song) => {
+          const progress = profile?.songProgress[song.id];
+          const stars = progress?.stars ?? 0;
 
-            {/* Hover gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-purple-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          </button>
-        ))}
+          return (
+            <button
+              key={song.id}
+              onClick={() => onSelectSong(song)}
+              className="w-full group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-semibold text-lg group-hover:text-white/90">
+                    {song.title}
+                  </h3>
+                  <p className="text-gray-500 text-sm">{song.artist}</p>
+                  {/* Stars */}
+                  {stars > 0 && (
+                    <div className="flex gap-0.5 mt-1">
+                      {[1, 2, 3].map(s => (
+                        <span key={s} className={`text-sm ${s <= stars ? 'text-yellow-400' : 'text-gray-700'}`}>
+                          ★
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-500 text-xs">{song.notes.length} notes</span>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold border ${difficultyColors[song.difficulty]}`}
+                  >
+                    {song.difficulty}
+                  </span>
+                </div>
+              </div>
+
+              {/* Best score */}
+              {progress && (
+                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                  <span>Best: {progress.bestScore.toLocaleString()}</span>
+                  <span className="text-purple-400">{progress.bestGrade}</span>
+                  <span>{progress.bestAccuracy.toFixed(0)}%</span>
+                </div>
+              )}
+
+              {/* Hover gradient */}
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-purple-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            </button>
+          );
+        })}
       </div>
 
       {/* Key guide */}
-      <div className="mt-12 text-center">
+      <div className="pb-8 text-center">
         <p className="text-gray-600 text-xs mb-2">KEYBOARD MAPPING</p>
         <div className="flex gap-1">
           {['A', 'S', 'D', 'F', '', 'J', 'K', 'L', ';'].map((key, i) =>

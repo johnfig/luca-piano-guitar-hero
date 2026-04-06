@@ -1,6 +1,6 @@
-import { ActiveNote, Particle, HitEffect, HitRating } from '@/types/game';
-import { LANE_COLORS, LANE_COLORS_DIM, HIT_RATING_COLORS, BG_COLOR, LANE_LINE_COLOR, HIT_ZONE_COLOR, CRESCENDO_COLOR } from '@/constants/colors';
-import { LANE_TO_NOTE, TOTAL_LANES } from '@/constants/keyboard';
+import { ActiveNote, Particle, HitEffect, MidiNote } from '@/types/game';
+import { getLaneColor, getLaneColorDim, HIT_RATING_COLORS, BG_COLOR, LANE_LINE_COLOR, HIT_ZONE_COLOR, CRESCENDO_COLOR } from '@/constants/colors';
+import { midiNoteToName } from '@/constants/keyboard';
 import { HIT_ZONE_Y, HIT_EFFECT_DURATION } from '@/constants/timing';
 import { lerp } from '@/utils/math';
 
@@ -11,10 +11,19 @@ class Renderer {
   private height = 0;
   private time = 0;
 
+  // Dynamic lane configuration
+  private laneCount = 8;
+  private activeLanes: MidiNote[] = [];
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.resize();
+  }
+
+  setLaneConfig(activeLanes: MidiNote[]): void {
+    this.activeLanes = activeLanes;
+    this.laneCount = activeLanes.length;
   }
 
   resize(): void {
@@ -115,12 +124,13 @@ class Renderer {
 
   private drawLanes(w: number, h: number): void {
     const ctx = this.ctx;
-    const laneWidth = w / TOTAL_LANES;
+    const lanes = this.laneCount;
+    const laneWidth = w / lanes;
 
     ctx.strokeStyle = LANE_LINE_COLOR;
     ctx.lineWidth = 1;
 
-    for (let i = 1; i < TOTAL_LANES; i++) {
+    for (let i = 1; i < lanes; i++) {
       const x = i * laneWidth;
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -129,13 +139,12 @@ class Renderer {
     }
 
     // Draw lane glow at bottom (subtle)
-    for (let i = 0; i < TOTAL_LANES; i++) {
-      const note = LANE_TO_NOTE[i];
+    for (let i = 0; i < lanes; i++) {
       const x = i * laneWidth + laneWidth / 2;
       const y = h * HIT_ZONE_Y;
 
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, laneWidth * 0.6);
-      gradient.addColorStop(0, LANE_COLORS_DIM[note]);
+      gradient.addColorStop(0, getLaneColorDim(i));
       gradient.addColorStop(1, 'transparent');
       ctx.fillStyle = gradient;
       ctx.fillRect(i * laneWidth, y - laneWidth * 0.3, laneWidth, laneWidth * 0.6);
@@ -145,7 +154,8 @@ class Renderer {
   private drawHitZone(w: number, h: number, pressedLanes: Set<number>): void {
     const ctx = this.ctx;
     const y = h * HIT_ZONE_Y;
-    const laneWidth = w / TOTAL_LANES;
+    const lanes = this.laneCount;
+    const laneWidth = w / lanes;
 
     // Base hit zone line
     ctx.fillStyle = HIT_ZONE_COLOR;
@@ -153,8 +163,7 @@ class Renderer {
 
     // Pressed lane highlights
     for (const lane of pressedLanes) {
-      const note = LANE_TO_NOTE[lane];
-      const color = LANE_COLORS[note];
+      const color = getLaneColor(lane);
       const x = lane * laneWidth;
 
       ctx.save();
@@ -170,10 +179,10 @@ class Renderer {
 
   private drawNote(note: ActiveNote, w: number, h: number, crescendoActive: boolean): void {
     const ctx = this.ctx;
-    const laneWidth = w / TOTAL_LANES;
+    const lanes = this.laneCount;
+    const laneWidth = w / lanes;
     const noteWidth = laneWidth * 0.7;
-    const pianoKey = note.songNote.note;
-    const color = crescendoActive ? CRESCENDO_COLOR : LANE_COLORS[pianoKey];
+    const color = crescendoActive ? CRESCENDO_COLOR : getLaneColor(note.lane);
 
     const x = note.lane * laneWidth + (laneWidth - noteWidth) / 2;
     const noteHeight = Math.max(note.height * h * HIT_ZONE_Y * 0.3, 20);

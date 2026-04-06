@@ -1,23 +1,25 @@
 'use client';
 
-import { PianoKey } from '@/types/game';
-import { LANE_TO_NOTE, KEY_LABELS, TOTAL_LANES } from '@/constants/keyboard';
-import { LANE_COLORS } from '@/constants/colors';
+import { MidiNote } from '@/types/game';
+import { midiNoteToName } from '@/constants/keyboard';
+import { getLaneColor } from '@/constants/colors';
 
 interface PianoKeyboardProps {
-  pressedNotes: Set<PianoKey>;
+  activeLanes: MidiNote[];
+  keyLabels: Map<MidiNote, string>;
+  pressedNotes: Set<MidiNote>;
   hitLanes: Set<number>; // lanes that just got a hit (for flash effect)
 }
 
-export default function PianoKeyboard({ pressedNotes, hitLanes }: PianoKeyboardProps) {
+export default function PianoKeyboard({ activeLanes, keyLabels, pressedNotes, hitLanes }: PianoKeyboardProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-30 flex">
-      {Array.from({ length: TOTAL_LANES }, (_, lane) => {
-        const note = LANE_TO_NOTE[lane];
-        const isPressed = pressedNotes.has(note);
+      {activeLanes.map((midiNote, lane) => {
+        const isPressed = pressedNotes.has(midiNote);
         const isHit = hitLanes.has(lane);
-        const color = LANE_COLORS[note];
-        const label = KEY_LABELS[note];
+        const color = getLaneColor(lane);
+        const label = keyLabels.get(midiNote) ?? '';
+        const noteName = midiNoteToName(midiNote);
 
         return (
           <div
@@ -56,7 +58,7 @@ export default function PianoKeyboard({ pressedNotes, hitLanes }: PianoKeyboardP
               >
                 {label}
               </span>
-              <span className="text-[10px] text-gray-600 mt-0.5">{note}</span>
+              <span className="text-[10px] text-gray-600 mt-0.5">{noteName}</span>
             </div>
           </div>
         );

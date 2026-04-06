@@ -1,26 +1,57 @@
-import { PianoKey, HitRating } from '@/types/game';
+import { HitRating } from '@/types/game';
 
-export const LANE_COLORS: Record<PianoKey, string> = {
-  'C4': '#ff3366',  // hot pink
-  'D4': '#ff6633',  // orange
-  'E4': '#ffcc00',  // yellow
-  'F4': '#33ff66',  // green
-  'G4': '#00ccff',  // cyan
-  'A4': '#3366ff',  // blue
-  'B4': '#9933ff',  // purple
-  'C5': '#ff33cc',  // magenta
-};
+// 16-color cycling palette for dynamic lane counts
+const COLOR_PALETTE = [
+  '#ff3366',  // hot pink
+  '#ff6633',  // orange
+  '#ffcc00',  // yellow
+  '#33ff66',  // green
+  '#00ccff',  // cyan
+  '#3366ff',  // blue
+  '#9933ff',  // purple
+  '#ff33cc',  // magenta
+  '#ff9966',  // peach
+  '#66ff99',  // mint
+  '#6699ff',  // periwinkle
+  '#cc66ff',  // lavender
+  '#ffcc66',  // gold
+  '#66ccff',  // sky
+  '#ff66cc',  // rose
+  '#99ff66',  // lime
+];
 
-export const LANE_COLORS_DIM: Record<PianoKey, string> = {
-  'C4': '#661429',
-  'D4': '#662914',
-  'E4': '#665200',
-  'F4': '#146629',
-  'G4': '#005266',
-  'A4': '#142966',
-  'B4': '#3d1466',
-  'C5': '#661452',
-};
+const DIM_PALETTE = [
+  '#661429',
+  '#662914',
+  '#665200',
+  '#146629',
+  '#005266',
+  '#142966',
+  '#3d1466',
+  '#661452',
+  '#663d29',
+  '#296640',
+  '#293d66',
+  '#522966',
+  '#665229',
+  '#295266',
+  '#662952',
+  '#3d6629',
+];
+
+/**
+ * Get lane color by index. Cycles through the palette for large lane counts.
+ */
+export function getLaneColor(laneIndex: number): string {
+  return COLOR_PALETTE[laneIndex % COLOR_PALETTE.length];
+}
+
+/**
+ * Get dim lane color by index.
+ */
+export function getLaneColorDim(laneIndex: number): string {
+  return DIM_PALETTE[laneIndex % DIM_PALETTE.length];
+}
 
 export const HIT_RATING_COLORS: Record<HitRating, string> = {
   'PERFECT': '#ffdd00',

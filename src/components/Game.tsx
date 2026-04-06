@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, Song, PianoKey, ActiveNote, Particle, HitEffect } from '@/types/game';
-import { NOTE_TO_LANE } from '@/constants/keyboard';
-import { LANE_COLORS } from '@/constants/colors';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { GameState, Song, MidiNote, ActiveNote, Particle, HitEffect } from '@/types/game';
+import { getActiveLanes, buildNoteToLane, buildKeyboardMap, buildKeyLabels, DEFAULT_ACTIVE_LANES, DEFAULT_KEY_LABELS } from '@/constants/keyboard';
+import { getLaneColor } from '@/constants/colors';
 import { FALL_DURATION } from '@/constants/timing';
-import { LANE_TO_NOTE } from '@/constants/keyboard';
+import { useProfile } from '@/contexts/ProfileContext';
 
 import AudioEngine from '@/engine/AudioEngine';
 import InputManager from '@/engine/InputManager';
@@ -14,6 +14,8 @@ import ScoreManager from '@/engine/ScoreManager';
 import ParticleSystem from '@/engine/ParticleSystem';
 import EffectsManager from '@/engine/EffectsManager';
 
+import ProfileSetup from './ProfileSetup';
+import ProfileSelect from './ProfileSelect';
 import Menu from './Menu';
 import Countdown from './Countdown';
 import PausedOverlay from './PausedOverlay';
@@ -24,14 +26,24 @@ import PianoKeyboard from './PianoKeyboard';
 import GameCanvas from './GameCanvas';
 
 export default function Game() {
+  const { profile, allProfiles, isNewUser, isLoading, createNewProfile, switchProfile, recordSongResult } = useProfile();
+
   const [gameState, setGameState] = useState<GameState>('MENU');
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [showProfileCreate, setShowProfileCreate] = useState(false);
+
+  // Result data for the results screen
+  const [lastResultData, setLastResultData] = useState<{
+    xpEarned: number;
+    leveledUp: boolean;
+    isFirstClear: boolean;
+  } | null>(null);
 
   // Render state (updated every frame)
   const [visibleNotes, setVisibleNotes] = useState<ActiveNote[]>([]);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [effects, setEffects] = useState<HitEffect[]>([]);
-  const [pressedNotes, setPressedNotes] = useState<Set<PianoKey>>(new Set());
+  const [pressedNotes, setPressedNotes] = useState<Set<MidiNote>>(new Set());
   const [pressedLanes, setPressedLanes] = useState<Set<number>>(new Set());
   const [hitLanes, setHitLanes] = useState<Set<number>>(new Set());
   const [score, setScore] = useState(0);
@@ -58,6 +70,34 @@ export default function Game() {
   const pauseTimeRef = useRef(0);
   const totalPausedRef = useRef(0);
 
+  // Compute dynamic lanes from current song's noteRange
+  const activeLanes = useMemo(() => {
+    if (!currentSong) return DEFAULT_ACTIVE_LANES;
+    return getActiveLanes(currentSong.noteRange);
+  }, [currentSong]);
+
+  const noteToLane = useMemo(() => {
+    return buildNoteToLane(activeLanes);
+  }, [activeLanes]);
+
+  const keyLabels = useMemo(() => {
+    if (!currentSong) return DEFAULT_KEY_LABELS;
+    const keyMap = buildKeyboardMap(activeLanes);
+    return buildKeyLabels(keyMap);
+  }, [currentSong, activeLanes]);
+
+  // Determine initial screen based on profile state
+  useEffect(() => {
+    if (isLoading) return;
+    if (isNewUser || (!profile && allProfiles.length === 0)) {
+      setGameState('PROFILE_SETUP');
+    } else if (!profile && allProfiles.length > 0) {
+      setGameState('PROFILE_SETUP');
+      setShowProfileCreate(false);
+    }
+    // If profile exists, stay on MENU
+  }, [isLoading, isNewUser, profile, allProfiles.length]);
+
   // Initialize audio on first interaction
   const initAudio = useCallback(() => {
     if (!audioRef.current) {
@@ -67,6 +107,19 @@ export default function Game() {
       audioRef.current.init();
     }
   }, []);
+
+  // Handle profile creation
+  const handleCreateProfile = useCallback((name: string, avatarIndex: number) => {
+    createNewProfile(name, avatarIndex);
+    setShowProfileCreate(false);
+    setGameState('MENU');
+  }, [createNewProfile]);
+
+  // Handle profile selection
+  const handleSelectProfile = useCallback((id: string) => {
+    switchProfile(id);
+    setGameState('MENU');
+  }, [switchProfile]);
 
   // Handle song selection
   const handleSelectSong = useCallback((song: Song) => {
@@ -79,8 +132,10 @@ export default function Game() {
   const handleCountdownComplete = useCallback(() => {
     if (!currentSong) return;
 
-    // Initialize engines
-    const noteManager = new NoteManager(currentSong);
+    const songLanes = getActiveLanes(currentSong.noteRange);
+    const songNoteToLane = buildNoteToLane(songLanes);
+
+    const noteManager = new NoteManager(currentSong, songNoteToLane);
     const scoreManager = new ScoreManager();
     const particleSys = new ParticleSystem();
     const effectsMgr = new EffectsManager();
@@ -92,20 +147,21 @@ export default function Game() {
     particleRef.current = particleSys;
     effectsRef.current = effectsMgr;
 
-    // Set up input
     if (!inputRef.current) {
       inputRef.current = new InputManager();
     }
+    inputRef.current.setActiveLanes(songLanes);
 
     gameStartTimeRef.current = performance.now() / 1000;
     lastFrameTimeRef.current = gameStartTimeRef.current;
     totalPausedRef.current = 0;
 
+    setLastResultData(null);
     setGameState('PLAYING');
   }, [currentSong]);
 
   // Key press handler
-  const handleNotePress = useCallback((note: PianoKey, lane: number) => {
+  const handleNotePress = useCallback((midiNote: MidiNote, lane: number) => {
     const audio = audioRef.current;
     const noteManager = noteManagerRef.current;
     const scoreManager = scoreManagerRef.current;
@@ -114,32 +170,29 @@ export default function Game() {
 
     if (!audio || !noteManager || !scoreManager || !particleSys || !effectsMgr) return;
 
-    // Play piano sound
-    audio.playNote(note, 0.3);
+    audio.playNote(midiNote, 0.3);
 
-    // Check for hit
     const currentTime = performance.now() / 1000 - gameStartTimeRef.current - totalPausedRef.current;
-    const hitResult = noteManager.checkHit(note, currentTime);
+    const hitResult = noteManager.checkHit(midiNote, currentTime);
 
     if (hitResult) {
       scoreManager.addHit(hitResult.rating);
       audio.playHitSound();
 
-      const combo = scoreManager.getCombo();
-      audio.playComboSound(combo);
+      const currentCombo = scoreManager.getCombo();
+      audio.playComboSound(currentCombo);
 
-      // Emit particles at hit location
       const canvasWidth = window.innerWidth;
-      const laneWidth = canvasWidth / 8;
+      const effectiveLaneCount = activeLanes.length;
+      const laneWidth = canvasWidth / effectiveLaneCount;
       const hitX = lane * laneWidth + laneWidth / 2;
       const hitY = (window.innerHeight - 80) * 0.85;
-      const color = LANE_COLORS[note];
+      const color = getLaneColor(lane);
 
       const particleCount = hitResult.rating === 'PERFECT' ? 15 : hitResult.rating === 'GREAT' ? 10 : 5;
       particleSys.emit(hitX, hitY, color, particleCount);
       effectsMgr.addHitEffect(lane, hitResult.rating, hitX, hitY);
 
-      // Flash the lane
       setHitLanes((prev) => {
         const next = new Set(prev);
         next.add(lane);
@@ -152,10 +205,8 @@ export default function Game() {
         }, 100);
         return next;
       });
-    } else {
-      // Key pressed but no note to hit — still play the sound but no points
     }
-  }, []);
+  }, [activeLanes]);
 
   // Handle space for crescendo
   useEffect(() => {
@@ -217,28 +268,27 @@ export default function Game() {
       return;
     }
 
-    // Start input listening
     const input = inputRef.current!;
     input.onKeyDown = handleNotePress;
-    input.onKeyUp = (note: PianoKey) => {
+    input.onKeyUp = (midiNote: MidiNote) => {
       setPressedNotes((prev) => {
         const next = new Set(prev);
-        next.delete(note);
+        next.delete(midiNote);
         return next;
       });
       setPressedLanes((prev) => {
         const next = new Set(prev);
-        next.delete(NOTE_TO_LANE[note]);
+        const lane = noteToLane.get(midiNote);
+        if (lane !== undefined) next.delete(lane);
         return next;
       });
     };
 
-    // Wrap onKeyDown to also track pressed state
     const originalHandler = handleNotePress;
-    input.onKeyDown = (note: PianoKey, lane: number) => {
-      setPressedNotes((prev) => new Set(prev).add(note));
+    input.onKeyDown = (midiNote: MidiNote, lane: number) => {
+      setPressedNotes((prev) => new Set(prev).add(midiNote));
       setPressedLanes((prev) => new Set(prev).add(lane));
-      originalHandler(note, lane);
+      originalHandler(midiNote, lane);
     };
 
     input.start();
@@ -254,13 +304,11 @@ export default function Game() {
       const deltaTime = Math.min(now - lastFrameTimeRef.current, 0.05);
       lastFrameTimeRef.current = now;
 
-      // Update systems
       noteManager.update(currentTime, FALL_DURATION);
       particleSys.update(deltaTime);
       effectsMgr.update(deltaTime);
       scoreManager.updateCrescendo(deltaTime);
 
-      // Check for missed notes (auto-miss)
       const visible = noteManager.getVisibleNotes();
       for (const n of visible) {
         if (n.missed && !n.hit && n.opacity > 0.95) {
@@ -268,13 +316,11 @@ export default function Game() {
         }
       }
 
-      // Calculate song progress
       if (currentSong) {
         const lastNoteTime = currentSong.notes[currentSong.notes.length - 1]?.time ?? 0;
         setSongProgress(Math.min(currentTime / (lastNoteTime + 2), 1));
       }
 
-      // Update render state
       setVisibleNotes([...visible]);
       setParticles([...particleSys.getParticles()]);
       setEffects([...effectsMgr.getEffects()]);
@@ -286,9 +332,22 @@ export default function Game() {
       setCrescendoActive(scoreManager.isCrescendoActive());
       setCrescendoTime(scoreManager.getCrescendoTimeRemaining());
 
-      // Check if song is complete
       if (noteManager.isComplete(currentTime)) {
         input.stop();
+
+        // Record result to profile
+        if (currentSong) {
+          const stats = scoreManager.getStats();
+          const grade = scoreManager.getGrade();
+          const resultData = recordSongResult(
+            currentSong.id,
+            stats,
+            grade,
+            currentSong.difficulty,
+          );
+          setLastResultData(resultData);
+        }
+
         setGameState('RESULTS');
         return;
       }
@@ -302,11 +361,34 @@ export default function Game() {
       cancelAnimationFrame(rafRef.current);
       input.stop();
     };
-  }, [gameState, currentSong, handleNotePress]);
+  }, [gameState, currentSong, handleNotePress, noteToLane, recordSongResult]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-[#0a0a1a] flex items-center justify-center">
+        <div className="text-gray-500 text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  // Profile setup / select
+  if (gameState === 'PROFILE_SETUP' || (!profile && gameState === 'MENU')) {
+    if (showProfileCreate || allProfiles.length === 0) {
+      return <ProfileSetup onCreateProfile={handleCreateProfile} />;
+    }
+    return (
+      <ProfileSelect
+        profiles={allProfiles}
+        onSelectProfile={handleSelectProfile}
+        onCreateNew={() => setShowProfileCreate(true)}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-[#0a0a1a] overflow-hidden select-none">
-      {/* Game canvas (always rendered for background) */}
+      {/* Game canvas */}
       {(gameState === 'PLAYING' || gameState === 'PAUSED' || gameState === 'COUNTDOWN') && currentSong && (
         <>
           <GameCanvas
@@ -317,8 +399,14 @@ export default function Game() {
             crescendoActive={crescendoActive}
             bpm={currentSong.bpm}
             songProgress={songProgress}
+            activeLanes={activeLanes}
           />
-          <PianoKeyboard pressedNotes={pressedNotes} hitLanes={hitLanes} />
+          <PianoKeyboard
+            activeLanes={activeLanes}
+            keyLabels={keyLabels}
+            pressedNotes={pressedNotes}
+            hitLanes={hitLanes}
+          />
         </>
       )}
 
@@ -341,8 +429,17 @@ export default function Game() {
         </>
       )}
 
-      {/* State-specific overlays */}
-      {gameState === 'MENU' && <Menu onSelectSong={handleSelectSong} />}
+      {/* State overlays */}
+      {gameState === 'MENU' && (
+        <Menu
+          onSelectSong={handleSelectSong}
+          profile={profile}
+          onSwitchProfile={() => {
+            setGameState('PROFILE_SETUP');
+            setShowProfileCreate(false);
+          }}
+        />
+      )}
 
       {gameState === 'COUNTDOWN' && <Countdown onComplete={handleCountdownComplete} />}
 
@@ -355,6 +452,10 @@ export default function Game() {
           song={currentSong}
           stats={scoreManagerRef.current.getStats()}
           grade={scoreManagerRef.current.getGrade()}
+          xpEarned={lastResultData?.xpEarned ?? 0}
+          leveledUp={lastResultData?.leveledUp ?? false}
+          isFirstClear={lastResultData?.isFirstClear ?? false}
+          profile={profile}
           onReplay={handleReplay}
           onMenu={handleQuit}
         />
