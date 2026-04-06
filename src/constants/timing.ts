@@ -1,0 +1,8 @@
+export const FALL_DURATION = 2.0;       // seconds for note to fall from top to hit zone
+export const COUNTDOWN_DURATION = 3;    // 3-2-1-GO
+export const HIT_ZONE_Y = 0.85;        // 85% from top of canvas
+export const NOTE_SPAWN_Y = -0.05;     // just above canvas
+export const MAX_PARTICLES = 200;
+export const PARTICLE_LIFETIME = 0.6;  // seconds
+export const HIT_EFFECT_DURATION = 0.4; // seconds
+export const MISS_WINDOW = 0.20;       // seconds past hit zone before auto-miss

@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "/opt/homebrew/bin/node",
+      "runtimeArgs": ["node_modules/.bin/next", "dev", "--webpack"],
+      "port": 3000,
+      "autoPort": true,
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/Cellar/node/25.6.1/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  ]
+}
