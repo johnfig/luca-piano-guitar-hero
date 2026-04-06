@@ -18,7 +18,7 @@ class InputManager {
   private midiAccess: MIDIAccess | null = null;
   private midiEnabled = false;
   private midiDevices: string[] = [];
-  private onMidiDevicesChanged: ((devices: string[]) => void) | null = null;
+  private midiDeviceListeners: Set<(devices: string[]) => void> = new Set();
 
   constructor() {
     // Default to the original 8-lane layout
@@ -68,7 +68,9 @@ class InputManager {
     this.midiAccess.inputs.forEach((input) => {
       this.midiDevices.push(input.name || 'Unknown MIDI Device');
     });
-    this.onMidiDevicesChanged?.(this.midiDevices);
+    for (const cb of this.midiDeviceListeners) {
+      cb(this.midiDevices);
+    }
   }
 
   getConnectedMidiDevices(): string[] {
@@ -83,8 +85,19 @@ class InputManager {
     return typeof navigator !== 'undefined' && !!navigator.requestMIDIAccess;
   }
 
+  /** @deprecated Use addOnMidiDevicesChanged/removeOnMidiDevicesChanged */
   setOnMidiDevicesChanged(callback: ((devices: string[]) => void) | null): void {
-    this.onMidiDevicesChanged = callback;
+    // Back-compat: clear all and set one
+    this.midiDeviceListeners.clear();
+    if (callback) this.midiDeviceListeners.add(callback);
+  }
+
+  addOnMidiDevicesChanged(callback: (devices: string[]) => void): void {
+    this.midiDeviceListeners.add(callback);
+  }
+
+  removeOnMidiDevicesChanged(callback: (devices: string[]) => void): void {
+    this.midiDeviceListeners.delete(callback);
   }
 
   private handleMidiMessage = (event: MIDIMessageEvent): void => {

@@ -17,12 +17,13 @@ export default function MidiStatus({ inputManager }: MidiStatusProps) {
     setMidiEnabled(inputManager.isMidiEnabled());
     setDevices(inputManager.getConnectedMidiDevices());
 
-    inputManager.setOnMidiDevicesChanged((newDevices) => {
+    const onDevicesChanged = (newDevices: string[]) => {
       setDevices(newDevices);
-    });
+    };
+    inputManager.addOnMidiDevicesChanged(onDevicesChanged);
 
     return () => {
-      inputManager.setOnMidiDevicesChanged(null);
+      inputManager.removeOnMidiDevicesChanged(onDevicesChanged);
     };
   }, [inputManager]);
 

@@ -39,6 +39,10 @@ export interface Song {
   bpm: number;
   notes: SongNote[];
   noteRange: NoteRange;
+  // Authentic piano version (with sharps/flats, correct key signature)
+  // Used when a MIDI keyboard is connected; falls back to notes/noteRange otherwise
+  pianoNotes?: SongNote[];
+  pianoNoteRange?: NoteRange;
   // Track metadata (optional, set when part of a track)
   trackId?: string;
   trackLevel?: number;

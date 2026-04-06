@@ -5,6 +5,7 @@ import { GameState, Song, MidiNote, ActiveNote, Particle, HitEffect } from '@/ty
 import { Track } from '@/types/tracks';
 import { getSong } from '@/data/songRegistry';
 import { getActiveLanes, buildNoteToLane, buildKeyboardMap, buildKeyLabels, DEFAULT_ACTIVE_LANES, DEFAULT_KEY_LABELS } from '@/constants/keyboard';
+import { resolveSongData } from '@/utils/songMode';
 import { getLaneColor } from '@/constants/colors';
 import { FALL_DURATION, SONG_START_DELAY } from '@/constants/timing';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -64,6 +65,7 @@ export default function Game() {
   const [crescendoActive, setCrescendoActive] = useState(false);
   const [crescendoTime, setCrescendoTime] = useState(0);
   const [songProgress, setSongProgress] = useState(0);
+  const [midiConnected, setMidiConnected] = useState(false);
 
   // Engine refs
   const audioRef = useRef<AudioEngine | null>(null);
@@ -73,9 +75,17 @@ export default function Game() {
   const particleRef = useRef<ParticleSystem | null>(null);
   const effectsRef = useRef<EffectsManager | null>(null);
 
-  // Try to enable MIDI on mount
+  // Try to enable MIDI on mount, track device connection
   useEffect(() => {
-    inputRef.current.enableMidi();
+    const input = inputRef.current;
+    const onDevicesChanged = (devices: string[]) => {
+      setMidiConnected(devices.length > 0);
+    };
+    input.enableMidi().then(() => {
+      setMidiConnected(input.getConnectedMidiDevices().length > 0);
+    });
+    input.addOnMidiDevicesChanged(onDevicesChanged);
+    return () => input.removeOnMidiDevicesChanged(onDevicesChanged);
   }, []);
 
   // Timing refs
@@ -85,21 +95,31 @@ export default function Game() {
   const pauseTimeRef = useRef(0);
   const totalPausedRef = useRef(0);
 
-  // Compute dynamic lanes from current song's noteRange
+  // Resolve which note set to use (authentic piano vs simplified keyboard)
+  const resolvedSong = useMemo(() => {
+    if (!currentSong) return null;
+    return resolveSongData(currentSong, midiConnected);
+  }, [currentSong, midiConnected]);
+
+  // Compute dynamic lanes from resolved note range
   const activeLanes = useMemo(() => {
-    if (!currentSong) return DEFAULT_ACTIVE_LANES;
-    return getActiveLanes(currentSong.noteRange);
-  }, [currentSong]);
+    if (!resolvedSong) return DEFAULT_ACTIVE_LANES;
+    return getActiveLanes(resolvedSong.noteRange);
+  }, [resolvedSong]);
 
   const noteToLane = useMemo(() => {
     return buildNoteToLane(activeLanes);
   }, [activeLanes]);
 
   const keyLabels = useMemo(() => {
-    if (!currentSong) return DEFAULT_KEY_LABELS;
+    if (!resolvedSong) return DEFAULT_KEY_LABELS;
+    if (resolvedSong.isMidiMode) {
+      // No keyboard labels in MIDI mode — user looks at physical keyboard
+      return new Map<MidiNote, string>();
+    }
     const keyMap = buildKeyboardMap(activeLanes);
     return buildKeyLabels(keyMap);
-  }, [currentSong, activeLanes]);
+  }, [resolvedSong, activeLanes]);
 
   // Determine initial screen based on profile state
   useEffect(() => {
@@ -182,17 +202,24 @@ export default function Game() {
 
   // Start playing after countdown
   const handleCountdownComplete = useCallback(() => {
-    if (!currentSong) return;
+    if (!currentSong || !resolvedSong) return;
 
-    const songLanes = getActiveLanes(currentSong.noteRange);
+    const songLanes = getActiveLanes(resolvedSong.noteRange);
     const songNoteToLane = buildNoteToLane(songLanes);
 
-    const noteManager = new NoteManager(currentSong, songNoteToLane);
+    // Build effective song with the resolved note set
+    const effectiveSong: Song = {
+      ...currentSong,
+      notes: resolvedSong.notes,
+      noteRange: resolvedSong.noteRange,
+    };
+
+    const noteManager = new NoteManager(effectiveSong, songNoteToLane);
     const scoreManager = new ScoreManager();
     const particleSys = new ParticleSystem();
     const effectsMgr = new EffectsManager();
 
-    scoreManager.setTotalNotes(currentSong.notes.length);
+    scoreManager.setTotalNotes(resolvedSong.notes.length);
 
     noteManagerRef.current = noteManager;
     scoreManagerRef.current = scoreManager;
@@ -208,7 +235,7 @@ export default function Game() {
 
     setLastResultData(null);
     setGameState('PLAYING');
-  }, [currentSong]);
+  }, [currentSong, resolvedSong]);
 
   // Key press handler
   const handleNotePress = useCallback((midiNote: MidiNote, lane: number) => {
@@ -501,6 +528,7 @@ export default function Game() {
             keyLabels={keyLabels}
             pressedNotes={pressedNotes}
             hitLanes={hitLanes}
+            isMidiMode={resolvedSong?.isMidiMode ?? false}
           />
         </>
       )}
