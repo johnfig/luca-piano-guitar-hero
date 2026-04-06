@@ -3,6 +3,7 @@
 import { UserProfile } from '@/types/game';
 import { Track } from '@/types/tracks';
 import { ALL_TRACKS } from '@/data/tracks';
+import { BADGES } from '@/data/badges';
 import { xpToNextLevel } from '@/lib/storage';
 import InputManager from '@/engine/InputManager';
 import MidiStatus from './MidiStatus';
@@ -20,6 +21,8 @@ interface TrackSelectProps {
 export default function TrackSelect({ profile, inputManager, onSelectTrack, onFreePlay, onSwitchProfile }: TrackSelectProps) {
   const xpProgress = xpToNextLevel(profile);
   const avatar = AVATARS[profile.avatarIndex] ?? '🎹';
+  const totalSongsPlayed = Object.values(profile.songProgress).filter(s => s.timesCompleted > 0).length;
+  const totalStarsEarned = Object.values(profile.songProgress).reduce((sum, s) => sum + s.stars, 0);
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#0a0a1a] z-50 overflow-y-auto">
@@ -63,6 +66,20 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
           <span className="text-white ml-3">HERO</span>
         </h1>
         <p className="text-gray-500 text-sm mt-2 tracking-widest uppercase">Choose your path</p>
+        {/* Quick stats */}
+        {(totalSongsPlayed > 0 || totalStarsEarned > 0) && (
+          <div className="flex justify-center gap-6 mt-3">
+            {totalSongsPlayed > 0 && (
+              <span className="text-gray-500 text-xs">🎵 {totalSongsPlayed} songs cleared</span>
+            )}
+            {totalStarsEarned > 0 && (
+              <span className="text-yellow-400 text-xs">★ {totalStarsEarned} total stars</span>
+            )}
+            {profile.earnedBadges.length > 0 && (
+              <span className="text-amber-400 text-xs">🏅 {profile.earnedBadges.length} badges</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Track cards */}
@@ -148,6 +165,35 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
           </span>
         </button>
       </div>
+
+      {/* Badges showcase */}
+      {profile.earnedBadges.length > 0 && (
+        <div className="w-full max-w-2xl mx-auto px-4 mt-6">
+          <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3">
+            Badges Earned ({profile.earnedBadges.length}/{BADGES.length})
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {profile.earnedBadges.map(eb => {
+              const badge = BADGES.find(b => b.id === eb.badgeId);
+              if (!badge) return null;
+              return (
+                <div
+                  key={eb.badgeId}
+                  className="group relative w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl hover:bg-white/10 hover:scale-110 transition-all cursor-default"
+                  title={`${badge.name}: ${badge.description}`}
+                >
+                  {badge.icon}
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-lg bg-gray-800 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                    <p className="text-white text-xs font-semibold">{badge.name}</p>
+                    <p className="text-gray-400 text-xs">{badge.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* MIDI Status */}
       <MidiStatus inputManager={inputManager} />
