@@ -4,17 +4,20 @@ import { UserProfile } from '@/types/game';
 import { Track } from '@/types/tracks';
 import { ALL_TRACKS } from '@/data/tracks';
 import { xpToNextLevel } from '@/lib/storage';
+import InputManager from '@/engine/InputManager';
+import MidiStatus from './MidiStatus';
 
 const AVATARS = ['🎹', '🎵', '🎶', '🎸', '🎻', '🎺', '🥁', '🎤', '🦊', '🐱', '🐶', '🦁'];
 
 interface TrackSelectProps {
   profile: UserProfile;
+  inputManager: InputManager;
   onSelectTrack: (track: Track) => void;
   onFreePlay: () => void;
   onSwitchProfile: () => void;
 }
 
-export default function TrackSelect({ profile, onSelectTrack, onFreePlay, onSwitchProfile }: TrackSelectProps) {
+export default function TrackSelect({ profile, inputManager, onSelectTrack, onFreePlay, onSwitchProfile }: TrackSelectProps) {
   const xpProgress = xpToNextLevel(profile);
   const avatar = AVATARS[profile.avatarIndex] ?? '🎹';
 
@@ -145,6 +148,9 @@ export default function TrackSelect({ profile, onSelectTrack, onFreePlay, onSwit
           </span>
         </button>
       </div>
+
+      {/* MIDI Status */}
+      <MidiStatus inputManager={inputManager} />
 
       {/* Bottom spacer */}
       <div className="h-8" />

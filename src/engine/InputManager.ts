@@ -5,6 +5,7 @@ export type NoteCallback = (midiNote: MidiNote, lane: number) => void;
 
 class InputManager {
   private pressedKeys: Set<string> = new Set();
+  private pressedMidiNotes: Set<MidiNote> = new Set();
   private onKeyDownCallback: NoteCallback | null = null;
   private onKeyUpCallback: NoteCallback | null = null;
   private active = false;
@@ -12,6 +13,12 @@ class InputManager {
   // Dynamic mappings (rebuilt per song)
   private keyboardMap: Record<string, MidiNote>;
   private noteToLane: Map<MidiNote, number>;
+
+  // MIDI state
+  private midiAccess: MIDIAccess | null = null;
+  private midiEnabled = false;
+  private midiDevices: string[] = [];
+  private onMidiDevicesChanged: ((devices: string[]) => void) | null = null;
 
   constructor() {
     // Default to the original 8-lane layout
@@ -27,6 +34,107 @@ class InputManager {
     this.keyboardMap = buildKeyboardMap(activeLanes);
     this.noteToLane = buildNoteToLane(activeLanes);
   }
+
+  // --- MIDI Support ---
+
+  /**
+   * Initialize Web MIDI API. Call once on app startup.
+   * Returns true if MIDI is available.
+   */
+  async enableMidi(): Promise<boolean> {
+    if (this.midiEnabled) return true;
+    if (!navigator.requestMIDIAccess) return false;
+
+    try {
+      this.midiAccess = await navigator.requestMIDIAccess();
+      this.midiEnabled = true;
+      this.updateMidiDevices();
+
+      // Listen for device connect/disconnect
+      this.midiAccess.onstatechange = () => {
+        this.updateMidiDevices();
+      };
+
+      return true;
+    } catch {
+      console.warn('MIDI access denied or unavailable');
+      return false;
+    }
+  }
+
+  private updateMidiDevices(): void {
+    if (!this.midiAccess) return;
+    this.midiDevices = [];
+    this.midiAccess.inputs.forEach((input) => {
+      this.midiDevices.push(input.name || 'Unknown MIDI Device');
+    });
+    this.onMidiDevicesChanged?.(this.midiDevices);
+  }
+
+  getConnectedMidiDevices(): string[] {
+    return [...this.midiDevices];
+  }
+
+  isMidiEnabled(): boolean {
+    return this.midiEnabled;
+  }
+
+  isMidiAvailable(): boolean {
+    return typeof navigator !== 'undefined' && !!navigator.requestMIDIAccess;
+  }
+
+  setOnMidiDevicesChanged(callback: ((devices: string[]) => void) | null): void {
+    this.onMidiDevicesChanged = callback;
+  }
+
+  private handleMidiMessage = (event: MIDIMessageEvent): void => {
+    const data = event.data;
+    if (!data || data.length < 3) return;
+
+    const status = data[0] & 0xf0;
+    const midiNote = data[1] as MidiNote;
+    const velocity = data[2];
+
+    if (status === 0x90 && velocity > 0) {
+      // Note On
+      this.handleMidiNoteOn(midiNote);
+    } else if (status === 0x80 || (status === 0x90 && velocity === 0)) {
+      // Note Off
+      this.handleMidiNoteOff(midiNote);
+    }
+  };
+
+  private handleMidiNoteOn(midiNote: MidiNote): void {
+    this.pressedMidiNotes.add(midiNote);
+    const lane = this.noteToLane.get(midiNote);
+    if (lane !== undefined && this.onKeyDownCallback) {
+      this.onKeyDownCallback(midiNote, lane);
+    }
+  }
+
+  private handleMidiNoteOff(midiNote: MidiNote): void {
+    this.pressedMidiNotes.delete(midiNote);
+    const lane = this.noteToLane.get(midiNote);
+    if (lane !== undefined && this.onKeyUpCallback) {
+      this.onKeyUpCallback(midiNote, lane);
+    }
+  }
+
+  private startMidiListening(): void {
+    if (!this.midiAccess) return;
+    this.midiAccess.inputs.forEach((input) => {
+      input.onmidimessage = this.handleMidiMessage;
+    });
+  }
+
+  private stopMidiListening(): void {
+    if (!this.midiAccess) return;
+    this.midiAccess.inputs.forEach((input) => {
+      input.onmidimessage = null;
+    });
+  }
+
+  // --- Keyboard handlers ---
 
   private handleKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat) return;
@@ -69,20 +177,27 @@ class InputManager {
   }
 
   isPressed(midiNote: MidiNote): boolean {
+    // Check both keyboard and MIDI
+    if (this.pressedMidiNotes.has(midiNote)) return true;
     const entry = Object.entries(this.keyboardMap).find(([, n]) => n === midiNote);
     return entry ? this.pressedKeys.has(entry[0]) : false;
   }
 
   getPressedNotes(): MidiNote[] {
-    return Array.from(this.pressedKeys)
+    const fromKeys = Array.from(this.pressedKeys)
       .map((key) => this.keyboardMap[key])
       .filter((note): note is MidiNote => note !== undefined);
+    const fromMidi = Array.from(this.pressedMidiNotes);
+    return [...new Set([...fromKeys, ...fromMidi])];
   }
 
   start(): void {
     if (this.active) return;
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
+    if (this.midiEnabled) {
+      this.startMidiListening();
+    }
     this.active = true;
   }
 
@@ -90,7 +205,9 @@ class InputManager {
     if (!this.active) return;
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    this.stopMidiListening();
     this.pressedKeys.clear();
+    this.pressedMidiNotes.clear();
     this.active = false;
   }
 }

@@ -63,11 +63,16 @@ export default function Game() {
 
   // Engine refs
   const audioRef = useRef<AudioEngine | null>(null);
-  const inputRef = useRef<InputManager | null>(null);
+  const inputRef = useRef<InputManager>(new InputManager());
   const noteManagerRef = useRef<NoteManager | null>(null);
   const scoreManagerRef = useRef<ScoreManager | null>(null);
   const particleRef = useRef<ParticleSystem | null>(null);
   const effectsRef = useRef<EffectsManager | null>(null);
+
+  // Try to enable MIDI on mount
+  useEffect(() => {
+    inputRef.current.enableMidi();
+  }, []);
 
   // Timing refs
   const gameStartTimeRef = useRef(0);
@@ -166,9 +171,6 @@ export default function Game() {
     particleRef.current = particleSys;
     effectsRef.current = effectsMgr;
 
-    if (!inputRef.current) {
-      inputRef.current = new InputManager();
-    }
     inputRef.current.setActiveLanes(songLanes);
 
     gameStartTimeRef.current = performance.now() / 1000;
@@ -266,7 +268,7 @@ export default function Game() {
   }, []);
 
   const handleQuit = useCallback(() => {
-    inputRef.current?.stop();
+    inputRef.current.stop();
     cancelAnimationFrame(rafRef.current);
     // Return to track map if we came from a track, otherwise to track select
     if (currentTrack) {
@@ -310,12 +312,12 @@ export default function Game() {
   useEffect(() => {
     if (gameState !== 'PLAYING') {
       if (gameState === 'PAUSED') {
-        inputRef.current?.stop();
+        inputRef.current.stop();
       }
       return;
     }
 
-    const input = inputRef.current!;
+    const input = inputRef.current;
     input.onKeyDown = handleNotePress;
     input.onKeyUp = (midiNote: MidiNote) => {
       setPressedNotes((prev) => {
@@ -484,6 +486,7 @@ export default function Game() {
       {gameState === 'TRACK_SELECT' && (
         <TrackSelect
           profile={profile}
+          inputManager={inputRef.current}
           onSelectTrack={handleSelectTrack}
           onFreePlay={handleFreePlay}
           onSwitchProfile={() => {
