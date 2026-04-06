@@ -14,10 +14,11 @@ interface TrackSelectProps {
   inputManager: InputManager;
   onSelectTrack: (track: Track) => void;
   onFreePlay: () => void;
+  onFreePiano: () => void;
   onSwitchProfile: () => void;
 }
 
-export default function TrackSelect({ profile, inputManager, onSelectTrack, onFreePlay, onSwitchProfile }: TrackSelectProps) {
+export default function TrackSelect({ profile, inputManager, onSelectTrack, onFreePlay, onFreePiano, onSwitchProfile }: TrackSelectProps) {
   const xpProgress = xpToNextLevel(profile);
   const avatar = AVATARS[profile.avatarIndex] ?? '🎹';
   const totalSongsPlayed = Object.values(profile.songProgress).filter(s => s.timesCompleted > 0).length;
@@ -197,6 +198,16 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
         >
           <span className="text-white/40 group-hover:text-white/70 font-semibold text-sm">
             🎵 Free Play — Pick any song
+          </span>
+        </button>
+
+        {/* Free Piano */}
+        <button
+          onClick={onFreePiano}
+          className="w-full group rounded-2xl border border-dashed border-blue-500/20 p-5 text-center transition-all hover:bg-blue-500/5 hover:border-blue-500/40"
+        >
+          <span className="text-white/40 group-hover:text-blue-300/80 font-semibold text-sm">
+            🎹 Free Piano — Just play
           </span>
         </button>
       </div>

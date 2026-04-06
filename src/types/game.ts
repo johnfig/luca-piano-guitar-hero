@@ -12,7 +12,8 @@ export type GameState =
   | 'COUNTDOWN'
   | 'PLAYING'
   | 'PAUSED'
-  | 'RESULTS';
+  | 'RESULTS'
+  | 'FREE_PIANO';
 
 export type Grade = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 

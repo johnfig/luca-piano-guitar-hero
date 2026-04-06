@@ -32,6 +32,7 @@ import HUD from './HUD';
 import CrescendoMeter from './CrescendoMeter';
 import PianoKeyboard from './PianoKeyboard';
 import GameCanvas from './GameCanvas';
+import FreePiano from './FreePiano';
 
 export default function Game() {
   const { profile, allProfiles, isNewUser, isLoading, createNewProfile, switchProfile, removeProfile, recordSongResult, updateProfile } = useProfile();
@@ -590,10 +591,21 @@ export default function Game() {
           inputManager={inputRef.current}
           onSelectTrack={handleSelectTrack}
           onFreePlay={handleFreePlay}
+          onFreePiano={() => {
+            initAudio();
+            setGameState('FREE_PIANO');
+          }}
           onSwitchProfile={() => {
             setGameState('PROFILE_SETUP');
             setShowProfileCreate(false);
           }}
+        />
+      )}
+
+      {gameState === 'FREE_PIANO' && (
+        <FreePiano
+          inputManager={inputRef.current}
+          onBack={() => setGameState('TRACK_SELECT')}
         />
       )}
 
