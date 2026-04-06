@@ -1,9 +1,17 @@
-import { sql } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
 import { UserProfile, SongProgress, EarnedBadge, TrackProgress, Grade } from '@/types/game';
+
+function getSQL() {
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!url) throw new Error('DATABASE_URL or POSTGRES_URL environment variable is required');
+  return neon(url);
+}
 
 // --- Schema Initialization ---
 
 export async function initDatabase(): Promise<void> {
+  const sql = getSQL();
+
   await sql`
     CREATE TABLE IF NOT EXISTS profiles (
       id             TEXT PRIMARY KEY,
@@ -68,7 +76,8 @@ export async function ensureDb(): Promise<void> {
 
 export async function getAllProfiles(): Promise<UserProfile[]> {
   await ensureDb();
-  const { rows } = await sql`SELECT * FROM profiles ORDER BY created_at ASC`;
+  const sql = getSQL();
+  const rows = await sql`SELECT * FROM profiles ORDER BY created_at ASC`;
   const profiles: UserProfile[] = [];
   for (const row of rows) {
     profiles.push(await hydrateProfile(row));
@@ -78,13 +87,15 @@ export async function getAllProfiles(): Promise<UserProfile[]> {
 
 export async function getProfile(id: string): Promise<UserProfile | null> {
   await ensureDb();
-  const { rows } = await sql`SELECT * FROM profiles WHERE id = ${id}`;
+  const sql = getSQL();
+  const rows = await sql`SELECT * FROM profiles WHERE id = ${id}`;
   if (rows.length === 0) return null;
   return hydrateProfile(rows[0]);
 }
 
 export async function upsertProfile(profile: UserProfile): Promise<void> {
   await ensureDb();
+  const sql = getSQL();
 
   // Upsert the profile row
   await sql`
@@ -130,18 +141,20 @@ export async function upsertProfile(profile: UserProfile): Promise<void> {
 
 export async function deleteProfileFromDb(id: string): Promise<void> {
   await ensureDb();
+  const sql = getSQL();
   await sql`DELETE FROM profiles WHERE id = ${id}`;
 }
 
 // --- Hydration: reconstruct UserProfile from DB rows ---
 
 async function hydrateProfile(row: Record<string, unknown>): Promise<UserProfile> {
+  const sql = getSQL();
   const id = row.id as string;
 
   // Fetch related data
-  const { rows: songRows } = await sql`SELECT * FROM song_progress WHERE profile_id = ${id}`;
-  const { rows: badgeRows } = await sql`SELECT * FROM earned_badges WHERE profile_id = ${id}`;
-  const { rows: trackRows } = await sql`SELECT * FROM track_progress WHERE profile_id = ${id}`;
+  const songRows = await sql`SELECT * FROM song_progress WHERE profile_id = ${id}`;
+  const badgeRows = await sql`SELECT * FROM earned_badges WHERE profile_id = ${id}`;
+  const trackRows = await sql`SELECT * FROM track_progress WHERE profile_id = ${id}`;
 
   const songProgress: Record<string, SongProgress> = {};
   for (const sr of songRows) {
