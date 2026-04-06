@@ -12,13 +12,13 @@ interface SpeedSelectProps {
 
 const SPEEDS: { value: SpeedOption; label: string; desc: string; color: string }[] = [
   { value: 0.5, label: '0.5x', desc: 'Super Slow', color: 'from-blue-500 to-cyan-500' },
-  { value: 0.75, label: '0.75x', desc: 'Slow', color: 'from-purple-500 to-blue-500' },
-  { value: 1, label: '1x', desc: 'Normal', color: 'from-pink-500 to-purple-500' },
+  { value: 0.75, label: '0.75x', desc: 'Slow', color: 'from-[#4ECDC4] to-blue-500' },
+  { value: 1, label: '1x', desc: 'Normal', color: 'from-[#FF6B6B] to-[#FF8E53]' },
 ];
 
 export default function SpeedSelect({ song, onStart, onBack }: SpeedSelectProps) {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a1a] z-50 p-4">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#110D21] z-50 p-4">
       <div className="text-center max-w-sm w-full space-y-8">
         {/* Song info */}
         <div>
@@ -40,7 +40,7 @@ export default function SpeedSelect({ song, onStart, onBack }: SpeedSelectProps)
             <button
               key={value}
               onClick={() => onStart(value)}
-              className="w-full group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full group relative overflow-hidden rounded-xl border border-white/10 bg-[#1A1530] px-6 py-4 text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -50,7 +50,7 @@ export default function SpeedSelect({ song, onStart, onBack }: SpeedSelectProps)
                   <span className="text-gray-400 text-sm">{desc}</span>
                 </div>
                 {value === 1 ? (
-                  <span className="text-xs text-gray-500 px-2 py-0.5 rounded-full bg-white/5">
+                  <span className="text-xs text-[#FF6B6B] px-2 py-0.5 rounded-full bg-[#FF6B6B]/10">
                     Full XP
                   </span>
                 ) : (
@@ -59,7 +59,7 @@ export default function SpeedSelect({ song, onStart, onBack }: SpeedSelectProps)
                   </span>
                 )}
               </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-purple-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FF6B6B]/0 via-[#FF6B6B]/5 to-[#FF8E53]/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </button>
           ))}
         </div>

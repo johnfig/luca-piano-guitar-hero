@@ -18,14 +18,14 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0a1a] z-50 p-4">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#110D21] z-50 p-4">
       {/* Title */}
       <div className="mb-10 text-center">
         <h1 className="text-6xl font-black tracking-tight mb-2">
-          <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            PIANO
+          <span className="bg-gradient-to-r from-[#FF6B6B] via-[#FF8E53] to-[#FFD93D] bg-clip-text text-transparent">
+            Piano
           </span>
-          <span className="text-white ml-3">HERO</span>
+          <span className="text-white ml-3">Pals</span>
         </h1>
         <p className="text-gray-400 text-lg mt-2">Who&apos;s playing?</p>
       </div>
@@ -44,14 +44,14 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
               {/* Main profile card */}
               <div
                 className={`w-full group relative overflow-hidden rounded-xl border bg-white/5 px-5 py-4 text-left transition-all ${
-                  isEditing ? 'border-purple-500/50' : 'border-white/10 hover:bg-white/10 hover:border-white/20'
+                  isEditing ? 'border-[#FF6B6B]/50' : 'border-white/10 hover:bg-white/10 hover:border-white/20'
                 }`}
               >
                 <div className="flex items-center gap-4">
                   {/* Avatar - clickable to select */}
                   <button
                     onClick={() => !isEditing && onSelectProfile(profile.id)}
-                    className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center text-2xl flex-shrink-0 hover:scale-110 transition-transform"
+                    className="w-12 h-12 rounded-full bg-[#FF6B6B]/15 flex items-center justify-center text-2xl flex-shrink-0 hover:scale-110 transition-transform"
                   >
                     {avatar}
                   </button>
@@ -65,7 +65,7 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                       <h3 className="text-white font-semibold text-lg truncate">
                         {profile.displayName}
                       </h3>
-                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 flex-shrink-0">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#4ECDC4]/15 text-[#4ECDC4] flex-shrink-0">
                         Lv.{profile.level}
                       </span>
                     </div>
@@ -74,7 +74,7 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                     <div className="mt-1.5 flex items-center gap-2">
                       <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                          className="h-full rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53]"
                           style={{ width: `${progressPct}%` }}
                         />
                       </div>
@@ -135,13 +135,13 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
 
                 {/* Hover gradient */}
                 {!isEditing && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-purple-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#FF6B6B]/0 via-[#FF6B6B]/5 to-[#FF8E53]/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 )}
               </div>
 
               {/* Avatar picker dropdown */}
               {isEditing && (
-                <div className="mt-2 p-4 rounded-xl bg-white/5 border border-purple-500/30">
+                <div className="mt-2 p-4 rounded-xl bg-white/5 border border-[#FF6B6B]/30">
                   <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3">
                     Change Avatar
                   </p>
@@ -155,7 +155,7 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                         }}
                         className={`w-11 h-11 rounded-xl text-xl flex items-center justify-center transition-all ${
                           profile.avatarIndex === i
-                            ? 'bg-purple-500/30 border-2 border-purple-400 scale-110'
+                            ? 'bg-[#FF6B6B]/20 border-2 border-[#FF6B6B] scale-110'
                             : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-110'
                         }`}
                       >

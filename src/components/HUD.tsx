@@ -44,7 +44,7 @@ export default function HUD({ score, combo, multiplier, songTitle, crescendoActi
                 crescendoActive
                   ? 'bg-yellow-500/20 text-yellow-300 animate-pulse'
                   : multiplier > 1
-                    ? 'bg-purple-500/20 text-purple-300'
+                    ? 'bg-[#FF6B6B]/20 text-[#FF6B6B]'
                     : 'bg-white/10 text-gray-400'
               }`}
             >

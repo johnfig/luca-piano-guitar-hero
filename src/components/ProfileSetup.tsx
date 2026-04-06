@@ -21,27 +21,27 @@ export default function ProfileSetup({ onCreateProfile }: ProfileSetupProps) {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0a0a1a] z-50 p-4">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#110D21] z-50 p-4">
       {/* Title */}
       <div className="mb-10 text-center">
         <h1 className="text-5xl font-black tracking-tight mb-2">
-          <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#FF6B6B] via-[#FF8E53] to-[#FFD93D] bg-clip-text text-transparent">
             Welcome to
           </span>
         </h1>
         <h2 className="text-6xl font-black tracking-tight">
-          <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            PIANO
+          <span className="bg-gradient-to-r from-[#FF6B6B] via-[#FF8E53] to-[#FFD93D] bg-clip-text text-transparent">
+            Piano
           </span>
-          <span className="text-white ml-3">HERO</span>
+          <span className="text-white ml-3">Pals</span>
         </h2>
-        <p className="text-gray-500 text-lg mt-3">Create your profile to start learning!</p>
+        <p className="text-[#A09BB8] text-lg mt-3">Create your profile to start learning!</p>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-8">
         {/* Name input */}
         <div>
-          <label htmlFor="name" className="text-gray-400 text-sm font-semibold uppercase tracking-wider block mb-2">
+          <label htmlFor="name" className="text-[#A09BB8] text-sm font-semibold uppercase tracking-wider block mb-2">
             What&apos;s your name?
           </label>
           <input
@@ -52,13 +52,13 @@ export default function ProfileSetup({ onCreateProfile }: ProfileSetupProps) {
             placeholder="Enter your name..."
             maxLength={20}
             autoFocus
-            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-white text-lg placeholder-gray-600 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/20 text-white text-lg placeholder-gray-600 focus:outline-none focus:border-[#FF6B6B] focus:ring-1 focus:ring-[#FF6B6B] transition-colors"
           />
         </div>
 
         {/* Avatar picker */}
         <div>
-          <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-3">
+          <p className="text-[#A09BB8] text-sm font-semibold uppercase tracking-wider mb-3">
             Pick your avatar
           </p>
           <div className="grid grid-cols-7 gap-2">
@@ -69,7 +69,7 @@ export default function ProfileSetup({ onCreateProfile }: ProfileSetupProps) {
                 onClick={() => setAvatarIndex(i)}
                 className={`w-14 h-14 rounded-xl text-2xl flex items-center justify-center transition-all ${
                   avatarIndex === i
-                    ? 'bg-purple-500/30 border-2 border-purple-400 scale-110'
+                    ? 'bg-[#FF6B6B]/20 border-2 border-[#FF6B6B] scale-110'
                     : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:scale-105'
                 }`}
               >
@@ -85,11 +85,11 @@ export default function ProfileSetup({ onCreateProfile }: ProfileSetupProps) {
           disabled={!canSubmit}
           className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${
             canSubmit
-              ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-[1.02] active:scale-[0.98]'
+              ? 'bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] text-white hover:scale-[1.02] active:scale-[0.98]'
               : 'bg-gray-800 text-gray-600 cursor-not-allowed'
           }`}
         >
-          Let&apos;s Play! 🎹
+          Let&apos;s Play! 🎵
         </button>
       </form>
     </div>

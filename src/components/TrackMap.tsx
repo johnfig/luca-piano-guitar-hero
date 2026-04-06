@@ -72,7 +72,7 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
   const OFFSET_PX = 80;
 
   return (
-    <div className="fixed inset-0 flex flex-col z-50" style={{ backgroundColor: '#0d0d1f' }}>
+    <div className="fixed inset-0 flex flex-col z-50" style={{ backgroundColor: '#110D21' }}>
       {/* Header with gradient accent */}
       <div
         className="flex-shrink-0 relative z-10"
@@ -84,7 +84,7 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
           <div className="flex items-center gap-4 max-w-lg mx-auto">
             <button
               onClick={onBack}
-              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-colors text-lg"
+              className="w-10 h-10 rounded-full bg-[#1A1530] flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-colors text-lg"
             >
               ←
             </button>

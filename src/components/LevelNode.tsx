@@ -180,22 +180,22 @@ export default function LevelNode({
         {!isUnlocked && (
           <>
             {/* Bottom shadow */}
-            <div className="absolute inset-0 rounded-full translate-y-1" style={{ backgroundColor: '#1a1a2e' }} />
+            <div className="absolute inset-0 rounded-full translate-y-1" style={{ backgroundColor: '#151025' }} />
             {/* Main body */}
             <div
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'linear-gradient(145deg, #2a2a40 0%, #1e1e32 100%)',
+                background: 'linear-gradient(145deg, #1A1530 0%, #151025 100%)',
                 boxShadow: 'inset 0 2px 3px rgba(255,255,255,0.03)',
               }}
             />
             {/* Lock icon */}
             <div className="absolute inset-0 flex items-center justify-center">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="5" y="11" width="14" height="10" rx="2" fill="#3a3a55" />
+                <rect x="5" y="11" width="14" height="10" rx="2" fill="#231D40" />
                 <path
                   d="M8 11V7a4 4 0 0 1 8 0v4"
-                  stroke="#3a3a55"
+                  stroke="#231D40"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                 />
@@ -213,7 +213,7 @@ export default function LevelNode({
               key={s}
               className="text-base"
               style={{
-                color: s <= stars ? '#ffd700' : '#2a2a40',
+                color: s <= stars ? '#ffd700' : '#1A1530',
                 textShadow: s <= stars ? '0 0 10px rgba(255,215,0,0.6), 0 1px 2px rgba(0,0,0,0.3)' : 'none',
                 filter: s <= stars ? 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' : 'none',
               }}

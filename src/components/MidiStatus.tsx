@@ -38,7 +38,7 @@ export default function MidiStatus({ inputManager }: MidiStatusProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 mt-4">
-      <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+      <div className="rounded-xl bg-[#1A1530] border border-white/[0.08] px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">🎹</span>

@@ -23,19 +23,19 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
   const avatar = profile ? (AVATARS[profile.avatarIndex] ?? '🎹') : '🎹';
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center bg-[#0a0a1a] z-50 overflow-y-auto">
+    <div className="fixed inset-0 flex flex-col items-center bg-[#110D21] z-50 overflow-y-auto">
       {/* Profile bar */}
       {profile && (
         <div className="w-full max-w-lg px-4 pt-4">
           <button
             onClick={onSwitchProfile}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-[#1A1530] border border-white/[0.08] hover:bg-white/10 transition-colors"
           >
             <span className="text-2xl">{avatar}</span>
             <div className="flex-1 text-left">
               <div className="flex items-center gap-2">
                 <span className="text-white font-semibold">{profile.displayName}</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#4ECDC4]/15 text-[#4ECDC4]">
                   Lv.{profile.level}
                 </span>
                 {profile.currentStreak > 0 && (
@@ -46,7 +46,7 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
                 <div className="mt-1 flex items-center gap-2">
                   <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+                      className="h-full rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53]"
                       style={{ width: `${xpProgress.needed > 0 ? (xpProgress.current / xpProgress.needed) * 100 : 100}%` }}
                     />
                   </div>
@@ -63,7 +63,7 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
       <div className="w-full max-w-lg px-4 mt-4">
         <button
           onClick={onBack}
-          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+          className="w-10 h-10 rounded-xl bg-[#1A1530] border border-white/[0.08] flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
         >
           ←
         </button>
@@ -72,10 +72,10 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
       {/* Title */}
       <div className="mb-8 mt-4 text-center">
         <h1 className="text-7xl font-black tracking-tight mb-2">
-          <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            PIANO
+          <span className="bg-gradient-to-r from-[#FF6B6B] via-[#FF8E53] to-[#FFD93D] bg-clip-text text-transparent">
+            Piano
           </span>
-          <span className="text-white ml-3">HERO</span>
+          <span className="bg-gradient-to-r from-[#FF6B6B] via-[#FF8E53] to-[#FFD93D] bg-clip-text text-transparent ml-3">Pals</span>
         </h1>
         <p className="text-gray-500 text-lg tracking-widest uppercase">
           Master the keys
@@ -95,7 +95,7 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
             <button
               key={song.id}
               onClick={() => onSelectSong(song)}
-              className="w-full group relative overflow-hidden rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full group relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#1A1530] px-6 py-4 text-left transition-all hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -128,13 +128,13 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
               {progress && (
                 <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
                   <span>Best: {progress.bestScore.toLocaleString()}</span>
-                  <span className="text-purple-400">{progress.bestGrade}</span>
+                  <span className="text-[#FF6B6B]">{progress.bestGrade}</span>
                   <span>{progress.bestAccuracy.toFixed(0)}%</span>
                 </div>
               )}
 
               {/* Hover gradient */}
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/0 via-purple-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#FF6B6B]/0 via-[#FF8E53]/5 to-[#FFD93D]/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
             </button>
           );
         })}
@@ -150,7 +150,7 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }:
             ) : (
               <div
                 key={i}
-                className="w-10 h-10 rounded-lg border border-white/20 bg-white/5 flex items-center justify-center text-gray-400 text-sm font-mono"
+                className="w-10 h-10 rounded-lg border border-white/[0.12] bg-[#1A1530] flex items-center justify-center text-gray-400 text-sm font-mono"
               >
                 {key}
               </div>

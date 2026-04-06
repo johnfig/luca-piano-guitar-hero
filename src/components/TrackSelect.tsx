@@ -25,12 +25,12 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
   const xpPct = xpProgress.needed > 0 ? (xpProgress.current / xpProgress.needed) * 100 : 100;
 
   return (
-    <div className="fixed inset-0 flex flex-col z-50 overflow-y-auto" style={{ backgroundColor: '#0d0d1f' }}>
+    <div className="fixed inset-0 flex flex-col z-50 overflow-y-auto" style={{ backgroundColor: '#110D21' }}>
       {/* Profile bar */}
       <div className="w-full max-w-2xl mx-auto px-4 pt-4">
         <button
           onClick={onSwitchProfile}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/8 hover:bg-white/8 transition-all group"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#1A1530] border border-white/[0.08] hover:bg-white/8 transition-all group"
         >
           {/* Avatar with level ring */}
           <div className="relative w-12 h-12 flex-shrink-0">
@@ -45,8 +45,8 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
               />
               <defs>
                 <linearGradient id="xpGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#a855f7" />
-                  <stop offset="100%" stopColor="#ec4899" />
+                  <stop offset="0%" stopColor="#FF6B6B" />
+                  <stop offset="100%" stopColor="#FF8E53" />
                 </linearGradient>
               </defs>
             </svg>
@@ -58,7 +58,7 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2">
               <span className="text-white font-bold">{profile.displayName}</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/20">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#4ECDC4]/15 text-[#4ECDC4] border border-[#4ECDC4]/20">
                 LV {profile.level}
               </span>
               {profile.currentStreak > 0 && (
@@ -66,20 +66,20 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
               )}
             </div>
             <div className="mt-1 flex items-center gap-2">
-              <span className="text-white/30 text-[10px] font-medium">{xpProgress.current}/{xpProgress.needed} XP</span>
+              <span className="text-[#A09BB8] text-[10px] font-medium">{xpProgress.current}/{xpProgress.needed} XP</span>
             </div>
           </div>
-          <span className="text-white/30 text-xs group-hover:text-white/60 transition-colors">Switch ›</span>
+          <span className="text-[#635E78] text-xs group-hover:text-white/60 transition-colors">Switch ›</span>
         </button>
       </div>
 
       {/* Hero section */}
       <div className="text-center mt-8 mb-8">
         <h1 className="text-6xl font-black tracking-tight">
-          <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-            PIANO
+          <span style={{ background: 'linear-gradient(135deg, #FF6B6B, #FF8E53, #FFD93D)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Piano
           </span>
-          <span className="text-white ml-3">HERO</span>
+          <span className="text-white ml-3">Pals</span>
         </h1>
 
         {/* Stats bar */}
@@ -88,15 +88,15 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
             <span className="text-lg">🎵</span>
             <div>
               <p className="text-white font-bold text-sm">{totalSongsPlayed}</p>
-              <p className="text-white/30 text-[10px] uppercase tracking-wider">Songs</p>
+              <p className="text-[#A09BB8] text-[10px] uppercase tracking-wider">Songs</p>
             </div>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div className="flex items-center gap-1.5">
-            <span className="text-lg" style={{ color: '#ffd700', textShadow: '0 0 8px rgba(255,215,0,0.4)' }}>★</span>
+            <span className="text-lg" style={{ color: '#FFD700', textShadow: '0 0 8px rgba(255,215,0,0.4)' }}>★</span>
             <div>
               <p className="text-white font-bold text-sm">{totalStarsEarned}</p>
-              <p className="text-white/30 text-[10px] uppercase tracking-wider">Stars</p>
+              <p className="text-[#A09BB8] text-[10px] uppercase tracking-wider">Stars</p>
             </div>
           </div>
           <div className="w-px h-8 bg-white/10" />
@@ -104,7 +104,7 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
             <span className="text-lg">🏅</span>
             <div>
               <p className="text-white font-bold text-sm">{profile.earnedBadges.length}</p>
-              <p className="text-white/30 text-[10px] uppercase tracking-wider">Badges</p>
+              <p className="text-[#A09BB8] text-[10px] uppercase tracking-wider">Badges</p>
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
         {/* Free Play */}
         <button
           onClick={onFreePlay}
-          className="w-full group rounded-2xl border border-dashed border-white/10 p-5 text-center transition-all hover:bg-white/5 hover:border-white/20"
+          className="w-full group rounded-2xl border border-dashed border-[#FF6B6B]/20 p-5 text-center transition-all hover:bg-white/5 hover:border-[#FF6B6B]/40"
         >
           <span className="text-white/40 group-hover:text-white/70 font-semibold text-sm">
             🎵 Free Play — Pick any song
@@ -204,7 +204,7 @@ export default function TrackSelect({ profile, inputManager, onSelectTrack, onFr
       {/* Badges showcase */}
       {profile.earnedBadges.length > 0 && (
         <div className="w-full max-w-2xl mx-auto px-4 mt-8">
-          <h3 className="text-white/30 text-[10px] font-bold uppercase tracking-widest mb-3">
+          <h3 className="text-[#635E78] text-[10px] font-bold uppercase tracking-widest mb-3">
             Badges ({profile.earnedBadges.length}/{BADGES.length})
           </h3>
           <div className="flex flex-wrap gap-2">

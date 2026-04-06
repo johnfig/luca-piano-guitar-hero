@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Piano Hero",
-  description: "A Guitar Hero-style game for learning piano",
+  title: "Piano Pals",
+  description: "Learn piano, have fun",
 };
 
 export default function RootLayout({

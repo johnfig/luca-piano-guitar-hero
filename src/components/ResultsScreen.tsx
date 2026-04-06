@@ -85,7 +85,7 @@ export default function ResultsScreen({
   const xpProgress = profile ? xpToNextLevel(profile) : null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#0a0a1a] z-50 overflow-y-auto py-8">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#110D21] z-50 overflow-y-auto py-8">
       <div className="text-center space-y-5 max-w-md w-full px-4">
         {/* Song info */}
         <div>
@@ -142,8 +142,8 @@ export default function ResultsScreen({
         {/* XP Earned */}
         {showXP && xpEarned > 0 && (
           <div className="animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20">
-              <span className="text-purple-400 font-bold text-lg">+{xpEarned} XP</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FF6B6B]/10 border border-[#FF6B6B]/20">
+              <span className="text-[#FF6B6B] font-bold text-lg">+{xpEarned} XP</span>
               {isFirstClear && (
                 <span className="px-2 py-0.5 rounded text-xs font-bold bg-green-500/20 text-green-400">
                   First Clear!
@@ -153,14 +153,14 @@ export default function ResultsScreen({
             {/* XP bar */}
             {xpProgress && (
               <div className="mt-2 flex items-center gap-2 max-w-xs mx-auto">
-                <span className="text-gray-600 text-xs">Lv.{profile?.level}</span>
+                <span className="text-[#635E78] text-xs">Lv.{profile?.level}</span>
                 <div className="flex-1 h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-1000"
+                    className="h-full rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53] transition-all duration-1000"
                     style={{ width: `${xpProgress.needed > 0 ? (xpProgress.current / xpProgress.needed) * 100 : 100}%` }}
                   />
                 </div>
-                <span className="text-gray-600 text-xs">{xpProgress.current}/{xpProgress.needed}</span>
+                <span className="text-[#635E78] text-xs">{xpProgress.current}/{xpProgress.needed}</span>
               </div>
             )}
           </div>
@@ -209,7 +209,7 @@ export default function ResultsScreen({
         </div>
 
         {/* Max combo */}
-        <div className="py-3 px-4 rounded-xl bg-white/5 border border-white/10">
+        <div className="py-3 px-4 rounded-xl bg-[#1A1530] border border-white/[0.08]">
           <p className="text-gray-500 text-xs uppercase tracking-wider">Max Combo</p>
           <p className="text-2xl font-black text-white">{stats.maxCombo}</p>
         </div>
@@ -226,7 +226,7 @@ export default function ResultsScreen({
           {onNextLevel && grade !== 'F' && (
             <button
               onClick={onNextLevel}
-              className="py-3 px-8 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold text-lg hover:scale-105 active:scale-95 transition-transform"
+              className="py-3 px-8 rounded-xl bg-gradient-to-r from-[#2ED573] to-[#4ECDC4] text-white font-bold text-lg hover:scale-105 active:scale-95 transition-transform"
             >
               Next Level →
             </button>
@@ -236,7 +236,7 @@ export default function ResultsScreen({
             className={`py-3 px-8 rounded-xl text-white font-bold text-lg hover:scale-105 active:scale-95 transition-transform ${
               onNextLevel && grade !== 'F'
                 ? 'border border-white/20 bg-white/5'
-                : 'bg-gradient-to-r from-pink-500 to-purple-500'
+                : 'bg-gradient-to-r from-[#FF6B6B] to-[#FF8E53]'
             }`}
           >
             Play Again
@@ -255,7 +255,7 @@ export default function ResultsScreen({
 
 function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="py-3 px-4 rounded-xl bg-white/5 border border-white/10">
+    <div className="py-3 px-4 rounded-xl bg-[#1A1530] border border-white/[0.08]">
       <p className="text-gray-500 text-xs uppercase tracking-wider">{label}</p>
       <p className={`text-2xl font-black ${color}`}>{value}</p>
     </div>
