@@ -13,24 +13,27 @@ interface TrackMapProps {
   onBack: () => void;
 }
 
-// Book boundaries for Suzuki track visual theming
-const SUZUKI_BOOK_BOUNDARIES = [
-  { startLevel: 1, endLevel: 14, label: 'Book 1 — Beginner', bgClass: 'from-green-900/20 to-green-800/5' },
-];
+// Generate a winding path: nodes snake left-center-right-center-left...
+function getNodePosition(index: number, total: number): { x: number } {
+  // Pattern: center, right, center, left, center, right, center, left...
+  // Creates a gentle S-curve
+  const positions = [0, 1, 0, -1]; // center, right, center, left
+  const pos = positions[index % 4];
+  return { x: pos };
+}
 
 export default function TrackMap({ track, profile, onSelectSong, onBack }: TrackMapProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const trackProgress = profile.trackProgress[track.id];
 
-  // Compute total stars earned in this track (for unlock checks)
-  const getTotalStarsUpTo = (levelNumber: number): number => {
-    let total = 0;
-    for (const level of track.levels) {
-      if (level.levelNumber >= levelNumber) break;
-      const songProg = profile.songProgress[level.songId];
-      if (songProg) total += songProg.stars;
-    }
-    return total;
+  const isLevelUnlocked = (levelNumber: number): boolean => {
+    const level = track.levels.find(l => l.levelNumber === levelNumber);
+    if (!level) return false;
+    if (level.requiredStars === 0) return true;
+    const prevLevel = track.levels.find(l => l.levelNumber === levelNumber - 1);
+    if (!prevLevel) return true;
+    const prevStars = profile.songProgress[prevLevel.songId]?.stars ?? 0;
+    return prevStars >= level.requiredStars;
   };
 
   // Find current level (first uncompleted unlocked level)
@@ -38,11 +41,7 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
     for (const level of track.levels) {
       const songProg = profile.songProgress[level.songId];
       if (!songProg || songProg.stars === 0) {
-        // Check if this level is unlocked
-        const starsEarned = getTotalStarsUpTo(level.levelNumber);
-        const prevLevel = track.levels.find(l => l.levelNumber === level.levelNumber - 1);
-        const prevStars = prevLevel ? (profile.songProgress[prevLevel.songId]?.stars ?? 0) : 999;
-        if (level.requiredStars === 0 || prevStars >= level.requiredStars) {
+        if (isLevelUnlocked(level.levelNumber)) {
           return level.levelNumber;
         }
       }
@@ -62,18 +61,6 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
     }
   }, [currentLevelNumber]);
 
-  const isLevelUnlocked = (levelNumber: number): boolean => {
-    const level = track.levels.find(l => l.levelNumber === levelNumber);
-    if (!level) return false;
-    if (level.requiredStars === 0) return true;
-
-    // Check previous level has enough stars
-    const prevLevel = track.levels.find(l => l.levelNumber === levelNumber - 1);
-    if (!prevLevel) return true;
-    const prevStars = profile.songProgress[prevLevel.songId]?.stars ?? 0;
-    return prevStars >= level.requiredStars;
-  };
-
   const handleSelectLevel = (songId: string) => {
     const song = getSong(songId);
     if (song) {
@@ -81,7 +68,7 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
     }
   };
 
-  // Total stats
+  // Stats
   const completedCount = track.levels.filter(l => {
     const sp = profile.songProgress[l.songId];
     return sp && sp.stars > 0;
@@ -90,12 +77,13 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
     return sum + (profile.songProgress[l.songId]?.stars ?? 0);
   }, 0);
   const maxStars = track.levels.length * 3;
+  const allComplete = completedCount === track.levels.length;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#0a0a1a] z-50">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 pt-4 pb-3">
-        <div className="flex items-center gap-4 max-w-2xl mx-auto">
+      <div className="flex-shrink-0 px-4 pt-4 pb-3 bg-gradient-to-b from-[#0a0a1a] to-transparent relative z-10">
+        <div className="flex items-center gap-4 max-w-lg mx-auto">
           <button
             onClick={onBack}
             className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -114,8 +102,8 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
             </div>
           </div>
 
-          {/* Track progress bar */}
-          <div className="w-24">
+          {/* Progress bar */}
+          <div className="w-20">
             <div className="h-2 rounded-full bg-white/10 overflow-hidden">
               <div
                 className="h-full rounded-full transition-all"
@@ -129,46 +117,91 @@ export default function TrackMap({ track, profile, onSelectSong, onBack }: Track
         </div>
       </div>
 
-      {/* Scrollable level list */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-8">
-        <div className="max-w-2xl mx-auto space-y-2 pt-2">
-          {track.levels.map((level, index) => {
-            const unlocked = isLevelUnlocked(level.levelNumber);
-            const isCurrent = level.levelNumber === currentLevelNumber;
-            const songProg = profile.songProgress[level.songId];
+      {/* Scrollable map */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div className="max-w-lg mx-auto px-4 pt-4 pb-12">
+          {/* Winding path with nodes */}
+          <div className="relative">
+            {/* SVG connecting paths */}
+            <svg
+              className="absolute inset-0 pointer-events-none"
+              style={{ zIndex: 0, width: '100%', height: track.levels.length * 140 }}
+              viewBox={`0 0 400 ${track.levels.length * 140}`}
+              preserveAspectRatio="none"
+            >
+              {track.levels.map((level, index) => {
+                if (index === 0) return null;
+                const prevPos = getNodePosition(index - 1, track.levels.length);
+                const currPos = getNodePosition(index, track.levels.length);
 
-            return (
-              <div key={level.levelNumber} data-level={level.levelNumber}>
-                {/* Connection line between levels */}
-                {index > 0 && (
-                  <div className="flex justify-center -my-1">
-                    <div
-                      className="w-0.5 h-4"
-                      style={{
-                        backgroundColor: unlocked ? track.color + '40' : 'rgba(255,255,255,0.05)',
-                      }}
+                const prevX = 200 + prevPos.x * 80;
+                const currX = 200 + currPos.x * 80;
+                const prevY = (index - 1) * 140 + 40;
+                const currY = index * 140 + 40;
+
+                const isConnectedCompleted =
+                  (profile.songProgress[track.levels[index - 1].songId]?.stars ?? 0) > 0;
+
+                return (
+                  <path
+                    key={`path-${index}`}
+                    d={`M ${prevX} ${prevY} C ${prevX} ${prevY + 50}, ${currX} ${currY - 50}, ${currX} ${currY}`}
+                    fill="none"
+                    stroke={isConnectedCompleted ? track.color : 'rgba(255,255,255,0.08)'}
+                    strokeOpacity={isConnectedCompleted ? 0.4 : 1}
+                    strokeWidth={isConnectedCompleted ? 6 : 4}
+                    strokeDasharray={isConnectedCompleted ? 'none' : '10 10'}
+                    strokeLinecap="round"
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Level nodes */}
+            <div className="relative" style={{ zIndex: 1 }}>
+              {track.levels.map((level, index) => {
+                const unlocked = isLevelUnlocked(level.levelNumber);
+                const isCurrent = level.levelNumber === currentLevelNumber;
+                const songProg = profile.songProgress[level.songId];
+                const pos = getNodePosition(index, track.levels.length);
+
+                const translateX = pos.x * 25;
+
+                return (
+                  <div
+                    key={level.levelNumber}
+                    data-level={level.levelNumber}
+                    className="flex justify-center"
+                    style={{
+                      height: 140,
+                      transform: `translateX(${translateX}%)`,
+                    }}
+                  >
+                    <LevelNode
+                      level={level}
+                      songProgress={songProg}
+                      isUnlocked={unlocked}
+                      isCurrentLevel={isCurrent}
+                      trackColor={track.color}
+                      onClick={() => unlocked && handleSelectLevel(level.songId)}
                     />
                   </div>
-                )}
-
-                <LevelNode
-                  level={level}
-                  songProgress={songProg}
-                  isUnlocked={unlocked}
-                  isCurrentLevel={isCurrent}
-                  trackColor={track.color}
-                  onClick={() => unlocked && handleSelectLevel(level.songId)}
-                />
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          </div>
 
           {/* Track completion message */}
-          {completedCount === track.levels.length && (
+          {allComplete && (
             <div className="text-center py-8">
-              <span className="text-4xl">🏆</span>
-              <p className="text-white font-bold text-lg mt-2">Track Complete!</p>
-              <p className="text-gray-500 text-sm">You&apos;ve mastered every song. Amazing!</p>
+              <span className="text-5xl">🏆</span>
+              <p className="text-white font-black text-2xl mt-3">Track Complete!</p>
+              <p className="text-gray-400 text-sm mt-1">You&apos;ve mastered every song. Amazing!</p>
+              <div className="mt-3 flex justify-center gap-1">
+                {[...Array(3)].map((_, i) => (
+                  <span key={i} className="text-2xl text-yellow-400">★</span>
+                ))}
+              </div>
             </div>
           )}
         </div>
