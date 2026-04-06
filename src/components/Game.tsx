@@ -67,6 +67,10 @@ export default function Game() {
   const [songProgress, setSongProgress] = useState(0);
   const [midiConnected, setMidiConnected] = useState(false);
 
+  // Dev: ?forceMidi=true in URL simulates MIDI connected for visual testing
+  const forceMidi = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('forceMidi') === 'true';
+  const effectiveMidiConnected = midiConnected || forceMidi;
+
   // Engine refs
   const audioRef = useRef<AudioEngine | null>(null);
   const inputRef = useRef<InputManager>(new InputManager());
@@ -98,8 +102,8 @@ export default function Game() {
   // Resolve which note set to use (authentic piano vs simplified keyboard)
   const resolvedSong = useMemo(() => {
     if (!currentSong) return null;
-    return resolveSongData(currentSong, midiConnected);
-  }, [currentSong, midiConnected]);
+    return resolveSongData(currentSong, effectiveMidiConnected);
+  }, [currentSong, effectiveMidiConnected]);
 
   // Compute dynamic lanes from resolved note range
   const activeLanes = useMemo(() => {
@@ -112,14 +116,14 @@ export default function Game() {
   }, [activeLanes]);
 
   const keyLabels = useMemo(() => {
-    if (midiConnected) {
+    if (effectiveMidiConnected) {
       // No keyboard labels in MIDI mode — user looks at physical keyboard
       return new Map<MidiNote, string>();
     }
     if (!resolvedSong) return DEFAULT_KEY_LABELS;
     const keyMap = buildKeyboardMap(activeLanes);
     return buildKeyLabels(keyMap);
-  }, [midiConnected, resolvedSong, activeLanes]);
+  }, [effectiveMidiConnected, resolvedSong, activeLanes]);
 
   // Determine initial screen based on profile state
   useEffect(() => {
@@ -535,7 +539,7 @@ export default function Game() {
             keyLabels={keyLabels}
             pressedNotes={pressedNotes}
             hitLanes={hitLanes}
-            isMidiMode={midiConnected}
+            isMidiMode={effectiveMidiConnected}
           />
         </>
       )}
