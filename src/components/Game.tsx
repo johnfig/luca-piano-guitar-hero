@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { GameState, Song, MidiNote, ActiveNote, Particle, HitEffect } from '@/types/game';
+import { Track } from '@/types/tracks';
 import { getActiveLanes, buildNoteToLane, buildKeyboardMap, buildKeyLabels, DEFAULT_ACTIVE_LANES, DEFAULT_KEY_LABELS } from '@/constants/keyboard';
 import { getLaneColor } from '@/constants/colors';
 import { FALL_DURATION } from '@/constants/timing';
@@ -16,6 +17,8 @@ import EffectsManager from '@/engine/EffectsManager';
 
 import ProfileSetup from './ProfileSetup';
 import ProfileSelect from './ProfileSelect';
+import TrackSelect from './TrackSelect';
+import TrackMap from './TrackMap';
 import Menu from './Menu';
 import Countdown from './Countdown';
 import PausedOverlay from './PausedOverlay';
@@ -28,8 +31,9 @@ import GameCanvas from './GameCanvas';
 export default function Game() {
   const { profile, allProfiles, isNewUser, isLoading, createNewProfile, switchProfile, recordSongResult } = useProfile();
 
-  const [gameState, setGameState] = useState<GameState>('MENU');
+  const [gameState, setGameState] = useState<GameState>('TRACK_SELECT');
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [showProfileCreate, setShowProfileCreate] = useState(false);
 
   // Result data for the results screen
@@ -95,7 +99,6 @@ export default function Game() {
       setGameState('PROFILE_SETUP');
       setShowProfileCreate(false);
     }
-    // If profile exists, stay on MENU
   }, [isLoading, isNewUser, profile, allProfiles.length]);
 
   // Initialize audio on first interaction
@@ -108,25 +111,39 @@ export default function Game() {
     }
   }, []);
 
-  // Handle profile creation
+  // --- Navigation handlers ---
+
   const handleCreateProfile = useCallback((name: string, avatarIndex: number) => {
     createNewProfile(name, avatarIndex);
     setShowProfileCreate(false);
-    setGameState('MENU');
+    setGameState('TRACK_SELECT');
   }, [createNewProfile]);
 
-  // Handle profile selection
   const handleSelectProfile = useCallback((id: string) => {
     switchProfile(id);
-    setGameState('MENU');
+    setGameState('TRACK_SELECT');
   }, [switchProfile]);
 
-  // Handle song selection
+  const handleSelectTrack = useCallback((track: Track) => {
+    setCurrentTrack(track);
+    setGameState('TRACK_MAP');
+  }, []);
+
+  const handleFreePlay = useCallback(() => {
+    setCurrentTrack(null);
+    setGameState('MENU');
+  }, []);
+
   const handleSelectSong = useCallback((song: Song) => {
     initAudio();
     setCurrentSong(song);
     setGameState('COUNTDOWN');
   }, [initAudio]);
+
+  const handleBackToTracks = useCallback(() => {
+    setCurrentTrack(null);
+    setGameState('TRACK_SELECT');
+  }, []);
 
   // Start playing after countdown
   const handleCountdownComplete = useCallback(() => {
@@ -249,9 +266,14 @@ export default function Game() {
   const handleQuit = useCallback(() => {
     inputRef.current?.stop();
     cancelAnimationFrame(rafRef.current);
-    setGameState('MENU');
+    // Return to track map if we came from a track, otherwise to track select
+    if (currentTrack) {
+      setGameState('TRACK_MAP');
+    } else {
+      setGameState('TRACK_SELECT');
+    }
     setCurrentSong(null);
-  }, []);
+  }, [currentTrack]);
 
   const handleReplay = useCallback(() => {
     if (currentSong) {
@@ -335,7 +357,6 @@ export default function Game() {
       if (noteManager.isComplete(currentTime)) {
         input.stop();
 
-        // Record result to profile
         if (currentSong) {
           const stats = scoreManager.getStats();
           const grade = scoreManager.getGrade();
@@ -363,7 +384,8 @@ export default function Game() {
     };
   }, [gameState, currentSong, handleNotePress, noteToLane, recordSongResult]);
 
-  // Loading state
+  // --- Rendering ---
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-[#0a0a1a] flex items-center justify-center">
@@ -373,7 +395,7 @@ export default function Game() {
   }
 
   // Profile setup / select
-  if (gameState === 'PROFILE_SETUP' || (!profile && gameState === 'MENU')) {
+  if (gameState === 'PROFILE_SETUP' || (!profile && gameState !== 'PLAYING')) {
     if (showProfileCreate || allProfiles.length === 0) {
       return <ProfileSetup onCreateProfile={handleCreateProfile} />;
     }
@@ -384,6 +406,10 @@ export default function Game() {
         onCreateNew={() => setShowProfileCreate(true)}
       />
     );
+  }
+
+  if (!profile) {
+    return <ProfileSetup onCreateProfile={handleCreateProfile} />;
   }
 
   return (
@@ -430,14 +456,33 @@ export default function Game() {
       )}
 
       {/* State overlays */}
-      {gameState === 'MENU' && (
-        <Menu
-          onSelectSong={handleSelectSong}
+      {gameState === 'TRACK_SELECT' && (
+        <TrackSelect
           profile={profile}
+          onSelectTrack={handleSelectTrack}
+          onFreePlay={handleFreePlay}
           onSwitchProfile={() => {
             setGameState('PROFILE_SETUP');
             setShowProfileCreate(false);
           }}
+        />
+      )}
+
+      {gameState === 'TRACK_MAP' && currentTrack && (
+        <TrackMap
+          track={currentTrack}
+          profile={profile}
+          onSelectSong={handleSelectSong}
+          onBack={handleBackToTracks}
+        />
+      )}
+
+      {gameState === 'MENU' && (
+        <Menu
+          onSelectSong={handleSelectSong}
+          profile={profile}
+          onSwitchProfile={() => setGameState('TRACK_SELECT')}
+          onBack={() => setGameState('TRACK_SELECT')}
         />
       )}
 

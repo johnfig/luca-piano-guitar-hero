@@ -10,6 +10,7 @@ interface MenuProps {
   onSelectSong: (song: Song) => void;
   profile: UserProfile | null;
   onSwitchProfile: () => void;
+  onBack: () => void;
 }
 
 const difficultyColors = {
@@ -18,7 +19,7 @@ const difficultyColors = {
   Hard: 'text-red-400 border-red-400/30',
 };
 
-export default function Menu({ onSelectSong, profile, onSwitchProfile }: MenuProps) {
+export default function Menu({ onSelectSong, profile, onSwitchProfile, onBack }: MenuProps) {
   const xpProgress = profile ? xpToNextLevel(profile) : null;
   const avatar = profile ? (AVATARS[profile.avatarIndex] ?? '🎹') : '🎹';
 
@@ -59,8 +60,18 @@ export default function Menu({ onSelectSong, profile, onSwitchProfile }: MenuPro
         </div>
       )}
 
+      {/* Back button */}
+      <div className="w-full max-w-lg px-4 mt-4">
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+        >
+          ←
+        </button>
+      </div>
+
       {/* Title */}
-      <div className="mb-8 mt-8 text-center">
+      <div className="mb-8 mt-4 text-center">
         <h1 className="text-7xl font-black tracking-tight mb-2">
           <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
             PIANO
