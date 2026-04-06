@@ -7,8 +7,7 @@ import { BADGES } from '@/data/badges';
 import { xpToNextLevel } from '@/lib/storage';
 import InputManager from '@/engine/InputManager';
 import MidiStatus from './MidiStatus';
-
-const AVATARS = ['🎹', '🎵', '🎶', '🎸', '🎻', '🎺', '🥁', '🎤', '🦊', '🐱', '🐶', '🦁'];
+import { AVATARS } from '@/constants/avatars';
 
 interface TrackSelectProps {
   profile: UserProfile;

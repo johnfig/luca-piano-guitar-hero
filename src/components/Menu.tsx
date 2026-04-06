@@ -3,8 +3,7 @@
 import { Song, UserProfile } from '@/types/game';
 import { songs } from '@/songs';
 import { xpToNextLevel } from '@/lib/storage';
-
-const AVATARS = ['🎹', '🎵', '🎶', '🎸', '🎻', '🎺', '🥁', '🎤', '🦊', '🐱', '🐶', '🦁'];
+import { AVATARS } from '@/constants/avatars';
 
 interface MenuProps {
   onSelectSong: (song: Song) => void;

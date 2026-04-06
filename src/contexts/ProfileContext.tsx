@@ -7,6 +7,7 @@ import {
   loadActiveProfile,
   saveProfile,
   createProfileInDb,
+  deleteProfile as deleteProfileApi,
   setActiveProfileId,
   getLegacyProfiles,
   clearLegacyData,
@@ -28,6 +29,7 @@ interface ProfileContextValue {
   // Profile management
   createNewProfile: (name: string, avatarIndex: number) => void;
   switchProfile: (id: string) => void;
+  removeProfile: (id: string) => void;
 
   // Game results
   recordSongResult: (
@@ -114,6 +116,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       }
     }).catch(console.error);
   }, []);
+
+  const removeProfile = useCallback((id: string) => {
+    setAllProfiles(prev => prev.filter(p => p.id !== id));
+    if (profile?.id === id) {
+      setProfile(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('piano-hero-active-profile');
+      }
+    }
+    deleteProfileApi(id).catch(console.error);
+  }, [profile?.id]);
 
   const switchProfile = useCallback((id: string) => {
     setActiveProfileId(id);
@@ -218,6 +231,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         isLoading,
         createNewProfile,
         switchProfile,
+        removeProfile,
         recordSongResult,
         updateProfile: updateProfileInternal,
       }}

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-const AVATARS = ['🎹', '🎵', '🎶', '🎸', '🎻', '🎺', '🥁', '🎤', '🦊', '🐱', '🐶', '🦁'];
+import { AVATARS } from '@/constants/avatars';
 
 interface ProfileSetupProps {
   onCreateProfile: (name: string, avatarIndex: number) => void;
@@ -62,7 +61,7 @@ export default function ProfileSetup({ onCreateProfile }: ProfileSetupProps) {
           <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-3">
             Pick your avatar
           </p>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-7 gap-2">
             {AVATARS.map((emoji, i) => (
               <button
                 key={i}

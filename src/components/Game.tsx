@@ -30,7 +30,7 @@ import PianoKeyboard from './PianoKeyboard';
 import GameCanvas from './GameCanvas';
 
 export default function Game() {
-  const { profile, allProfiles, isNewUser, isLoading, createNewProfile, switchProfile, recordSongResult } = useProfile();
+  const { profile, allProfiles, isNewUser, isLoading, createNewProfile, switchProfile, removeProfile, recordSongResult, updateProfile } = useProfile();
 
   const [gameState, setGameState] = useState<GameState>('TRACK_SELECT');
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
@@ -130,6 +130,25 @@ export default function Game() {
     switchProfile(id);
     setGameState('TRACK_SELECT');
   }, [switchProfile]);
+
+  const handleDeleteProfile = useCallback((id: string) => {
+    removeProfile(id);
+  }, [removeProfile]);
+
+  const handleChangeAvatar = useCallback((id: string, avatarIndex: number) => {
+    if (profile && profile.id === id) {
+      updateProfile(prev => ({ ...prev, avatarIndex }));
+    } else {
+      // For non-active profiles, fetch and update
+      const target = allProfiles.find(p => p.id === id);
+      if (target) {
+        const updated = { ...target, avatarIndex };
+        import('@/lib/storage').then(({ saveProfile }) => {
+          saveProfile(updated).catch(console.error);
+        });
+      }
+    }
+  }, [profile, allProfiles, updateProfile]);
 
   const handleSelectTrack = useCallback((track: Track) => {
     setCurrentTrack(track);
@@ -437,6 +456,8 @@ export default function Game() {
         profiles={allProfiles}
         onSelectProfile={handleSelectProfile}
         onCreateNew={() => setShowProfileCreate(true)}
+        onDeleteProfile={handleDeleteProfile}
+        onChangeAvatar={handleChangeAvatar}
       />
     );
   }
