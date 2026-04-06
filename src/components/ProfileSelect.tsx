@@ -90,48 +90,18 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                     </div>
                   </button>
 
-                  {/* Edit/Delete actions */}
-                  <div className="flex flex-col gap-1 flex-shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingId(isEditing ? null : profile.id);
-                        setConfirmDeleteId(null);
-                      }}
-                      className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-colors text-sm"
-                      title="Edit avatar"
-                    >
-                      {isEditing ? '×' : '✏️'}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isConfirmingDelete) {
-                          onDeleteProfile(profile.id);
-                          setConfirmDeleteId(null);
-                        } else {
-                          setConfirmDeleteId(profile.id);
-                          setTimeout(() => setConfirmDeleteId(null), 3000);
-                        }
-                      }}
-                      className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-colors text-sm ${
-                        isConfirmingDelete
-                          ? 'bg-red-500/20 border-red-500/50 text-red-400'
-                          : 'bg-white/5 border-white/10 text-gray-500 hover:text-red-400 hover:bg-red-500/10'
-                      }`}
-                      title={isConfirmingDelete ? 'Click again to confirm' : 'Delete profile'}
-                    >
-                      {isConfirmingDelete ? '!' : '🗑'}
-                    </button>
-                  </div>
+                  {/* Edit button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingId(isEditing ? null : profile.id);
+                      setConfirmDeleteId(null);
+                    }}
+                    className="text-gray-500 hover:text-white text-xs font-medium transition-colors flex-shrink-0"
+                  >
+                    {isEditing ? 'Done' : 'Edit'}
+                  </button>
                 </div>
-
-                {/* Confirm delete message */}
-                {isConfirmingDelete && (
-                  <div className="mt-2 text-xs text-red-400 text-center animate-pulse">
-                    Click again to permanently delete this profile
-                  </div>
-                )}
 
                 {/* Hover gradient */}
                 {!isEditing && (
@@ -139,7 +109,7 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                 )}
               </div>
 
-              {/* Avatar picker dropdown */}
+              {/* Edit panel */}
               {isEditing && (
                 <div className="mt-2 p-4 rounded-xl bg-white/5 border border-[#FF6B6B]/30">
                   <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3">
@@ -151,7 +121,6 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                         key={i}
                         onClick={() => {
                           onChangeAvatar(profile.id, i);
-                          setEditingId(null);
                         }}
                         className={`w-11 h-11 rounded-xl text-xl flex items-center justify-center transition-all ${
                           profile.avatarIndex === i
@@ -162,6 +131,30 @@ export default function ProfileSelect({ profiles, onSelectProfile, onCreateNew, 
                         {emoji}
                       </button>
                     ))}
+                  </div>
+
+                  {/* Delete profile */}
+                  <div className="mt-4 pt-3 border-t border-white/10">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isConfirmingDelete) {
+                          onDeleteProfile(profile.id);
+                          setConfirmDeleteId(null);
+                          setEditingId(null);
+                        } else {
+                          setConfirmDeleteId(profile.id);
+                          setTimeout(() => setConfirmDeleteId(null), 3000);
+                        }
+                      }}
+                      className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isConfirmingDelete
+                          ? 'bg-red-500/20 border border-red-500/50 text-red-400'
+                          : 'text-gray-500 hover:text-red-400'
+                      }`}
+                    >
+                      {isConfirmingDelete ? 'Tap again to permanently delete' : 'Delete Profile'}
+                    </button>
                   </div>
                 </div>
               )}
