@@ -8,6 +8,7 @@ export type GameState =
   | 'TRACK_SELECT'
   | 'TRACK_MAP'
   | 'MENU'
+  | 'SPEED_SELECT'
   | 'COUNTDOWN'
   | 'PLAYING'
   | 'PAUSED'

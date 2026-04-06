@@ -22,6 +22,8 @@ import TrackSelect from './TrackSelect';
 import TrackMap from './TrackMap';
 import Menu from './Menu';
 import Countdown from './Countdown';
+import SpeedSelect from './SpeedSelect';
+import { SpeedOption } from './SpeedSelect';
 import PausedOverlay from './PausedOverlay';
 import ResultsScreen from './ResultsScreen';
 import HUD from './HUD';
@@ -36,6 +38,8 @@ export default function Game() {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [showProfileCreate, setShowProfileCreate] = useState(false);
+  const [speedMultiplier, setSpeedMultiplier] = useState<SpeedOption>(1);
+  const isPracticeMode = speedMultiplier !== 1;
 
   // Result data for the results screen
   const [lastResultData, setLastResultData] = useState<{
@@ -161,8 +165,13 @@ export default function Game() {
   }, []);
 
   const handleSelectSong = useCallback((song: Song) => {
-    initAudio();
     setCurrentSong(song);
+    setGameState('SPEED_SELECT');
+  }, []);
+
+  const handleSpeedSelected = useCallback((speed: SpeedOption) => {
+    initAudio();
+    setSpeedMultiplier(speed);
     setGameState('COUNTDOWN');
   }, [initAudio]);
 
@@ -213,7 +222,8 @@ export default function Game() {
 
     audio.startNote(midiNote);
 
-    const currentTime = performance.now() / 1000 - gameStartTimeRef.current - totalPausedRef.current;
+    const realElapsed = performance.now() / 1000 - gameStartTimeRef.current - totalPausedRef.current;
+    const currentTime = realElapsed * speedMultiplier;
     const hitResult = noteManager.checkHit(midiNote, currentTime);
 
     if (hitResult) {
@@ -247,7 +257,7 @@ export default function Game() {
         return next;
       });
     }
-  }, [activeLanes]);
+  }, [activeLanes, speedMultiplier]);
 
   // Handle space for crescendo
   useEffect(() => {
@@ -308,12 +318,10 @@ export default function Game() {
 
   const handleNextLevel = useCallback(() => {
     if (!currentTrack || !currentSong) return;
-    // Find the current level and the next one
     const currentLevel = currentTrack.levels.find(l => l.songId === currentSong.id);
     if (!currentLevel) return;
     const nextLevel = currentTrack.levels.find(l => l.levelNumber === currentLevel.levelNumber + 1);
     if (!nextLevel) {
-      // No more levels, go back to track map
       setGameState('TRACK_MAP');
       setCurrentSong(null);
       return;
@@ -321,6 +329,7 @@ export default function Game() {
     const nextSong = getSong(nextLevel.songId);
     if (nextSong) {
       initAudio();
+      setSpeedMultiplier(1); // Next level always at normal speed
       setCurrentSong(nextSong);
       setGameState('COUNTDOWN');
     } else {
@@ -374,7 +383,8 @@ export default function Game() {
 
     const gameLoop = () => {
       const now = performance.now() / 1000;
-      const currentTime = now - gameStartTimeRef.current - totalPausedRef.current;
+      const realElapsed = now - gameStartTimeRef.current - totalPausedRef.current;
+      const currentTime = realElapsed * speedMultiplier;
       const deltaTime = Math.min(now - lastFrameTimeRef.current, 0.05);
       lastFrameTimeRef.current = now;
 
@@ -410,15 +420,20 @@ export default function Game() {
         input.stop();
 
         if (currentSong) {
-          const stats = scoreManager.getStats();
-          const grade = scoreManager.getGrade();
-          const resultData = recordSongResult(
-            currentSong.id,
-            stats,
-            grade,
-            currentSong.difficulty,
-          );
-          setLastResultData(resultData);
+          if (isPracticeMode) {
+            // Practice mode: no XP, no progression
+            setLastResultData({ xpEarned: 0, leveledUp: false, isFirstClear: false, newBadges: [] });
+          } else {
+            const stats = scoreManager.getStats();
+            const grade = scoreManager.getGrade();
+            const resultData = recordSongResult(
+              currentSong.id,
+              stats,
+              grade,
+              currentSong.difficulty,
+            );
+            setLastResultData(resultData);
+          }
         }
 
         setGameState('RESULTS');
@@ -434,7 +449,7 @@ export default function Game() {
       cancelAnimationFrame(rafRef.current);
       input.stop();
     };
-  }, [gameState, currentSong, handleNotePress, noteToLane, recordSongResult]);
+  }, [gameState, currentSong, handleNotePress, noteToLane, recordSongResult, speedMultiplier, isPracticeMode]);
 
   // --- Rendering ---
 
@@ -500,6 +515,11 @@ export default function Game() {
             songTitle={currentSong.title}
             crescendoActive={crescendoActive}
           />
+          {isPracticeMode && (
+            <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-300 text-xs font-semibold">
+              Practice {speedMultiplier}x
+            </div>
+          )}
           <CrescendoMeter
             meter={crescendoMeter}
             isReady={crescendoReady}
@@ -541,6 +561,20 @@ export default function Game() {
         />
       )}
 
+      {gameState === 'SPEED_SELECT' && currentSong && (
+        <SpeedSelect
+          song={currentSong}
+          onStart={handleSpeedSelected}
+          onBack={() => {
+            if (currentTrack) {
+              setGameState('TRACK_MAP');
+            } else {
+              setGameState('MENU');
+            }
+          }}
+        />
+      )}
+
       {gameState === 'COUNTDOWN' && <Countdown onComplete={handleCountdownComplete} />}
 
       {gameState === 'PAUSED' && (
@@ -556,10 +590,11 @@ export default function Game() {
           leveledUp={lastResultData?.leveledUp ?? false}
           isFirstClear={lastResultData?.isFirstClear ?? false}
           newBadges={lastResultData?.newBadges ?? []}
+          isPracticeMode={isPracticeMode}
           profile={profile}
           onReplay={handleReplay}
           onMenu={handleQuit}
-          onNextLevel={currentTrack ? handleNextLevel : undefined}
+          onNextLevel={currentTrack && !isPracticeMode ? handleNextLevel : undefined}
         />
       )}
     </div>

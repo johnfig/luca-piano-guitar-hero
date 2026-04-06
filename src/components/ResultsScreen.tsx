@@ -13,6 +13,7 @@ interface ResultsScreenProps {
   leveledUp: boolean;
   isFirstClear: boolean;
   newBadges: string[];
+  isPracticeMode?: boolean;
   profile: UserProfile | null;
   onReplay: () => void;
   onMenu: () => void;
@@ -45,6 +46,7 @@ export default function ResultsScreen({
   leveledUp,
   isFirstClear,
   newBadges,
+  isPracticeMode,
   profile,
   onReplay,
   onMenu,
@@ -87,8 +89,15 @@ export default function ResultsScreen({
       <div className="text-center space-y-5 max-w-md w-full px-4">
         {/* Song info */}
         <div>
-          <p className="text-gray-500 text-sm uppercase tracking-wider">Results</p>
+          <p className="text-gray-500 text-sm uppercase tracking-wider">
+            {isPracticeMode ? 'Practice Results' : 'Results'}
+          </p>
           <h2 className="text-2xl font-bold text-white mt-1">{song.title}</h2>
+          {isPracticeMode && (
+            <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              Practice Mode — No XP earned
+            </span>
+          )}
         </div>
 
         {/* Grade */}
