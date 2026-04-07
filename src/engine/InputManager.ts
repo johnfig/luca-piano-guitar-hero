@@ -49,14 +49,15 @@ class InputManager {
       this.midiEnabled = true;
       this.updateMidiDevices();
 
-      // Listen for device connect/disconnect — re-bind listeners on reconnect
+      // Listen for device connect/disconnect — always re-bind listeners
       this.midiAccess.onstatechange = () => {
         this.updateMidiDevices();
-        // Re-bind MIDI message handlers to any new inputs
-        if (this.active) {
-          this.startMidiListening();
-        }
+        // Always re-bind MIDI message handlers on any state change
+        this.startMidiListening();
       };
+
+      // Bind listeners immediately so MIDI works even before start()
+      this.startMidiListening();
 
       return true;
     } catch {
@@ -67,9 +68,15 @@ class InputManager {
 
   /** Force a fresh MIDI scan — useful after unplug/replug */
   async reconnectMidi(): Promise<boolean> {
+    // Don't null out midiAccess — browser caches it and re-enumerating
+    // from the existing object is more reliable than re-requesting
+    if (this.midiAccess) {
+      this.updateMidiDevices();
+      this.startMidiListening();
+      return this.midiDevices.length > 0;
+    }
+    // No existing access — request fresh
     this.midiEnabled = false;
-    this.midiAccess = null;
-    this.midiDevices = [];
     return this.enableMidi();
   }
 

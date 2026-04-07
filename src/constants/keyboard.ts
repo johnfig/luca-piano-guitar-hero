@@ -49,49 +49,46 @@ export function buildNoteToLane(activeLanes: MidiNote[]): Map<MidiNote, number> 
 
 // --- Dynamic Keyboard Mapping ---
 
-// Row layouts for different lane counts
-const ROW_SINGLE: string[] = ['a', 's', 'd', 'f', 'j', 'k', 'l', ';'];
-const ROW_EXTENDED: string[] = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"];
-const ROW_TOP: string[] = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']'];
-const ROW_BOTTOM: string[] = ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/'];
+// Piano-style layout: home row = white keys, top row = sharps between them
+// Mirrors a real keyboard: ASDFGHJKL = white keys, QWERTYUIOP = black keys
+const HOME_ROW: string[] = ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', "'"];
+const TOP_ROW: string[] = ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '['];
 
 /**
  * Build a keyboard key → MIDI note mapping for the given active lanes.
- * Strategy:
- * - <=8 lanes: ASDF JKL; (original layout)
- * - 9-11 lanes: ASDFGHJKL;'
- * - 12+ lanes: two rows (bottom + top)
+ *
+ * Piano-style layout:
+ *   Q  W  E     T  Y  U     O  P     ← sharps (black keys)
+ *  A  S  D  F  G  H  J  K  L  ;     ← naturals (white keys)
+ *
+ * White keys get home row left-to-right. Each black key gets the top-row
+ * key positioned between the two home-row keys it sits between.
  */
 export function buildKeyboardMap(activeLanes: MidiNote[]): Record<string, MidiNote> {
-  const count = activeLanes.length;
   const map: Record<string, MidiNote> = {};
 
-  if (count <= 8) {
-    // Use the original ASDF JKL; layout
-    for (let i = 0; i < count; i++) {
-      map[ROW_SINGLE[i]] = activeLanes[i];
-    }
-  } else if (count <= 11) {
-    // Extended home row
-    for (let i = 0; i < count; i++) {
-      if (i < ROW_EXTENDED.length) {
-        map[ROW_EXTENDED[i]] = activeLanes[i];
-      }
+  // Separate white and black keys, preserving order
+  const whites = activeLanes.filter(n => isWhiteKey(n));
+  const blackSet = new Set(activeLanes.filter(n => !isWhiteKey(n)));
+
+  if (blackSet.size === 0) {
+    // All white keys — simple home row mapping
+    for (let i = 0; i < whites.length && i < HOME_ROW.length; i++) {
+      map[HOME_ROW[i]] = whites[i];
     }
   } else {
-    // Two rows: bottom row for lower notes, top row for higher notes
-    const bottomCount = Math.ceil(count / 2);
-    const topCount = count - bottomCount;
+    // Mixed white + black: piano-style two-row layout
+    let whiteIdx = 0;
+    for (const note of whites) {
+      if (whiteIdx >= HOME_ROW.length) break;
+      map[HOME_ROW[whiteIdx]] = note;
 
-    for (let i = 0; i < bottomCount; i++) {
-      if (i < ROW_BOTTOM.length) {
-        map[ROW_BOTTOM[i]] = activeLanes[i];
+      // Check if there's a black key between this white key and the next
+      const blackAbove = note + 1; // semitone above
+      if (blackSet.has(blackAbove) && whiteIdx < TOP_ROW.length) {
+        map[TOP_ROW[whiteIdx]] = blackAbove;
       }
-    }
-    for (let i = 0; i < topCount; i++) {
-      if (i < ROW_TOP.length) {
-        map[ROW_TOP[i]] = activeLanes[bottomCount + i];
-      }
+      whiteIdx++;
     }
   }
 
