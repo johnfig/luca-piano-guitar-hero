@@ -1,5 +1,20 @@
 import { Track } from '@/types/tracks';
 
+export const BEGINNER_TRACK: Track = {
+  id: 'beginner',
+  name: 'My First Piano',
+  description: 'Start here! Very simple songs with big keys — perfect for young learners',
+  icon: '🌟',
+  color: '#22cc88',
+  levels: [
+    { levelNumber: 1, songId: 'beginner-hot-cross-buns', title: 'Hot Cross Buns', description: 'Just 3 notes — the easiest song!', requiredStars: 0, xpReward: 30 },
+    { levelNumber: 2, songId: 'beginner-rain-rain', title: 'Rain Rain Go Away', description: 'Another 3-note melody', requiredStars: 0, xpReward: 30 },
+    { levelNumber: 3, songId: 'beginner-au-clair', title: 'Au Clair de la Lune', description: 'A pretty French song with 3 notes', requiredStars: 1, xpReward: 40 },
+    { levelNumber: 4, songId: 'beginner-lightly-row', title: 'Lightly Row', description: 'Your first 4-note song!', requiredStars: 1, xpReward: 50 },
+    { levelNumber: 5, songId: 'beginner-row-row-row', title: 'Row Row Row Your Boat', description: 'A fun song with 5 notes', requiredStars: 1, xpReward: 60, unlocksBadge: 'first-steps' },
+  ],
+};
+
 export const SUZUKI_TRACK: Track = {
   id: 'suzuki',
   name: 'Suzuki Method',
@@ -55,4 +70,4 @@ export const CLASSICS_TRACK: Track = {
   ],
 };
 
-export const ALL_TRACKS: Track[] = [SUZUKI_TRACK, POPULAR_TRACK, CLASSICS_TRACK];
+export const ALL_TRACKS: Track[] = [BEGINNER_TRACK, SUZUKI_TRACK, POPULAR_TRACK, CLASSICS_TRACK];

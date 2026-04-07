@@ -3,6 +3,7 @@ import { Song } from '@/types/game';
 // Import all songs from all directories
 import { songs as classicSongs } from '@/songs';
 import { popularSongs } from '@/songs/popular';
+import { beginnerSongs } from '@/songs/beginner';
 
 // Build flat lookup by song ID
 const registry: Record<string, Song> = {};
@@ -22,7 +23,7 @@ try {
 }
 
 // Register all songs
-for (const song of [...classicSongs, ...popularSongs, ...suzukiSongs]) {
+for (const song of [...beginnerSongs, ...classicSongs, ...popularSongs, ...suzukiSongs]) {
   registry[song.id] = song;
 }
 
