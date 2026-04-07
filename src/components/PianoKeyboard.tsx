@@ -11,13 +11,15 @@ interface PianoKeyboardProps {
   pressedNotes: Set<MidiNote>;
   hitLanes: Set<number>;
   isMidiMode: boolean;
+  /** Dynamic range for how many keys to display (song-specific sizing) */
+  displayRange?: { lowest: MidiNote; highest: MidiNote };
 }
 
 const WHITE_KEY_HEIGHT = 80;
 const BLACK_KEY_HEIGHT = 50;
 
 /**
- * Build the full 49-key range (C2-C6) for MIDI keyboard display.
+ * Build the full 49-key range (C1-C5) for MIDI keyboard display.
  */
 function buildFullKeyboardRange(): MidiNote[] {
   const all: MidiNote[] = [];
@@ -27,13 +29,27 @@ function buildFullKeyboardRange(): MidiNote[] {
   return all;
 }
 
-export default function PianoKeyboard({ activeLanes, keyLabels, pressedNotes, hitLanes, isMidiMode }: PianoKeyboardProps) {
-  // In MIDI mode, show the full 49-key keyboard (1:1 with physical Axiom 49)
+/**
+ * Build a note range from lowest to highest MIDI note.
+ */
+function buildRangeNotes(lowest: MidiNote, highest: MidiNote): MidiNote[] {
+  const all: MidiNote[] = [];
+  for (let n = lowest; n <= highest; n++) {
+    all.push(n);
+  }
+  return all;
+}
+
+export default function PianoKeyboard({ activeLanes, keyLabels, pressedNotes, hitLanes, isMidiMode, displayRange }: PianoKeyboardProps) {
+  // In MIDI mode (or keyboard mode with displayRange), show a piano-style keyboard
+  // sized to the song's note range — simpler songs get bigger keys
   if (isMidiMode) {
-    const fullRange = buildFullKeyboardRange();
+    const rangeNotes = displayRange
+      ? buildRangeNotes(displayRange.lowest, displayRange.highest)
+      : buildFullKeyboardRange();
     const activeSet = new Set(activeLanes);
     return <PianoLayout
-      allNotes={fullRange}
+      allNotes={rangeNotes}
       activeLanes={activeLanes}
       activeSet={activeSet}
       keyLabels={keyLabels}
@@ -45,9 +61,12 @@ export default function PianoKeyboard({ activeLanes, keyLabels, pressedNotes, hi
   // If the song itself has black keys in activeLanes (keyboard mode with sharps)
   const hasBlackKeys = activeLanes.some(n => !isWhiteKey(n));
   if (hasBlackKeys) {
+    const rangeNotes = displayRange
+      ? buildRangeNotes(displayRange.lowest, displayRange.highest)
+      : activeLanes;
     const activeSet = new Set(activeLanes);
     return <PianoLayout
-      allNotes={activeLanes}
+      allNotes={rangeNotes}
       activeLanes={activeLanes}
       activeSet={activeSet}
       keyLabels={keyLabels}

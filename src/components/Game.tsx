@@ -130,11 +130,24 @@ export default function Game() {
     return buildKeyLabels(keyMap);
   }, [effectiveMidiConnected, resolvedSong, activeLanes]);
 
-  // Piano key positions for the full 49-key keyboard (MIDI mode)
+  // Piano key positions — sized to the song's note range (with padding)
+  // Simpler songs = fewer keys = bigger keys on screen
+  const songDisplayRange = useMemo(() => {
+    if (!resolvedSong) return null;
+    const range = resolvedSong.noteRange;
+    // Pad by ~3 semitones (but clamp to physical keyboard range in MIDI mode)
+    const PAD = 3;
+    const minNote = effectiveMidiConnected ? MIDI_49_LOWEST : 21;
+    const maxNote = effectiveMidiConnected ? MIDI_49_HIGHEST : 108;
+    const lowest = Math.max(range.lowest - PAD, minNote) as MidiNote;
+    const highest = Math.min(range.highest + PAD, maxNote) as MidiNote;
+    return { lowest, highest };
+  }, [resolvedSong, effectiveMidiConnected]);
+
   const pianoPositions = useMemo(() => {
-    if (!effectiveMidiConnected) return undefined;
-    return computePianoPositions(MIDI_49_LOWEST, MIDI_49_HIGHEST);
-  }, [effectiveMidiConnected]);
+    if (!songDisplayRange) return undefined;
+    return computePianoPositions(songDisplayRange.lowest, songDisplayRange.highest);
+  }, [songDisplayRange]);
 
   // Determine initial screen based on profile state
   useEffect(() => {
@@ -561,6 +574,7 @@ export default function Game() {
             pressedNotes={pressedNotes}
             hitLanes={hitLanes}
             isMidiMode={effectiveMidiConnected}
+            displayRange={songDisplayRange ?? undefined}
           />
         </>
       )}
