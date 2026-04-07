@@ -249,7 +249,8 @@ class Renderer {
     const pos = this.lanePositions[note.lane];
     const laneX = pos.x * w;
     const laneW = pos.width * w;
-    const noteWidth = laneW * (pos.isBlack ? 0.8 : 0.82);
+    // Note fills the full key width so it aligns perfectly with the piano key below
+    const noteWidth = laneW;
     const color = crescendoActive ? CRESCENDO_COLOR : getLaneColor(note.lane);
 
     const x = laneX + (laneW - noteWidth) / 2;

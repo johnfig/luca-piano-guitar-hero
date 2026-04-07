@@ -15,8 +15,28 @@ interface PianoKeyboardProps {
   displayRange?: { lowest: MidiNote; highest: MidiNote };
 }
 
-const WHITE_KEY_HEIGHT = 80;
-const BLACK_KEY_HEIGHT = 50;
+const MIN_KEYBOARD_HEIGHT = 80;
+const MAX_KEYBOARD_HEIGHT = 160;
+const BLACK_KEY_RATIO = 0.625; // black key = 62.5% of white key height
+
+/** Scale keyboard height based on number of white keys displayed.
+ *  Few keys (3-8) = 80px, many keys (20+) = 160px */
+export function getKeyboardHeight(whiteKeyCount: number): number {
+  if (whiteKeyCount <= 8) return MIN_KEYBOARD_HEIGHT;
+  if (whiteKeyCount >= 20) return MAX_KEYBOARD_HEIGHT;
+  // Linear interpolation between 8 and 20 white keys
+  const t = (whiteKeyCount - 8) / (20 - 8);
+  return Math.round(MIN_KEYBOARD_HEIGHT + t * (MAX_KEYBOARD_HEIGHT - MIN_KEYBOARD_HEIGHT));
+}
+
+/** Count white keys in a MIDI range */
+export function countWhiteKeysInRange(lowest: MidiNote, highest: MidiNote): number {
+  let count = 0;
+  for (let n = lowest; n <= highest; n++) {
+    if (isWhiteKey(n)) count++;
+  }
+  return count;
+}
 
 /**
  * Build the full 49-key range (C1-C5) for MIDI keyboard display.
@@ -76,8 +96,9 @@ export default function PianoKeyboard({ activeLanes, keyLabels, pressedNotes, hi
   }
 
   // Keyboard mode: white keys only, equal width, with keyboard labels
+  const kbHeight = getKeyboardHeight(activeLanes.length);
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 flex" style={{ height: WHITE_KEY_HEIGHT }}>
+    <div className="fixed bottom-0 left-0 right-0 z-30 flex" style={{ height: kbHeight }}>
       {activeLanes.map((midiNote, lane) => {
         const isPressed = pressedNotes.has(midiNote);
         const isHit = hitLanes.has(lane);
@@ -89,7 +110,7 @@ export default function PianoKeyboard({ activeLanes, keyLabels, pressedNotes, hi
           <div
             key={lane}
             className="flex-1 relative"
-            style={{ height: WHITE_KEY_HEIGHT }}
+            style={{ height: kbHeight }}
           >
             <div
               className="absolute inset-0 transition-colors duration-75"
@@ -162,6 +183,8 @@ function PianoLayout({
 
   if (whiteNotes.length === 0) return null;
 
+  const whiteKeyHeight = getKeyboardHeight(whiteNotes.length);
+  const blackKeyHeight = Math.round(whiteKeyHeight * BLACK_KEY_RATIO);
   const whiteKeyWidth = 100 / whiteNotes.length; // percentage
   const blackKeyWidth = whiteKeyWidth * 0.6;
 
@@ -188,7 +211,7 @@ function PianoLayout({
   });
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30" style={{ height: WHITE_KEY_HEIGHT }}>
+    <div className="fixed bottom-0 left-0 right-0 z-30" style={{ height: whiteKeyHeight }}>
       {/* White keys layer */}
       {whiteNotes.map((midiNote) => {
         const isActive = activeSet.has(midiNote);
@@ -211,7 +234,7 @@ function PianoLayout({
             style={{
               left: `${pos.x}%`,
               width: `${pos.width}%`,
-              height: WHITE_KEY_HEIGHT,
+              height: whiteKeyHeight,
             }}
           >
             {/* White key background — only the LOWER portion (below black key zone) shows highlight */}
@@ -234,7 +257,7 @@ function PianoLayout({
               <div
                 className="absolute left-0 right-0 transition-colors duration-75"
                 style={{
-                  top: BLACK_KEY_HEIGHT,
+                  top: blackKeyHeight,
                   bottom: 0,
                   background: `linear-gradient(to bottom, ${color}50, ${color}30)`,
                   borderRadius: '0 0 5px 5px',
@@ -245,7 +268,7 @@ function PianoLayout({
               <div
                 className="absolute left-0 right-0"
                 style={{
-                  top: BLACK_KEY_HEIGHT,
+                  top: blackKeyHeight,
                   bottom: 0,
                   background: `linear-gradient(to bottom, ${color}20, ${color}10)`,
                   borderRadius: '0 0 5px 5px',
@@ -309,7 +332,7 @@ function PianoLayout({
             style={{
               left: `${pos.x}%`,
               width: `${pos.width}%`,
-              height: BLACK_KEY_HEIGHT,
+              height: blackKeyHeight,
             }}
           >
             <div
