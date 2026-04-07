@@ -9,16 +9,16 @@ const b = (beat: number) => beatsToSeconds(beat, BPM);
 // A major: A B C# D E F# G#
 
 // Right hand MIDI constants
-const A3 = 57, B3 = 59, Cs4 = 61, D4 = 62, E4 = 64;
+const A3 = 57, B3 = 59, Cs4 = 61, D4 = 62, E4 = 64, Fs4 = 66;
 
 // Left hand MIDI constants
 const A2 = 45, E3 = 52, D3 = 50, E2 = 40;
 
 // ===== RIGHT HAND (authentic A major melody) =====
 const rightHand: [number, MidiNote, number][] = [
-  // Line 1: "Twinkle twinkle little star" - paired sixteenths
+  // Line 1: "Twinkle twinkle little star" - A A E E F# F# E(hold)
   [0, A3, 0.25], [0.25, A3, 0.25], [1, E4, 0.25], [1.25, E4, 0.25],
-  [2, E4, 0.25], [2.25, E4, 0.25], [3, E4, 1],
+  [2, Fs4, 0.25], [2.25, Fs4, 0.25], [3, E4, 1],
   // Line 2: "How I wonder what you are"
   [4, D4, 0.25], [4.25, D4, 0.25], [5, Cs4, 0.25], [5.25, Cs4, 0.25],
   [6, B3, 0.25], [6.25, B3, 0.25], [7, A3, 1],
@@ -28,9 +28,9 @@ const rightHand: [number, MidiNote, number][] = [
   // Line 4: "Like a diamond in the sky"
   [12, E4, 0.25], [12.25, E4, 0.25], [13, D4, 0.25], [13.25, D4, 0.25],
   [14, Cs4, 0.25], [14.25, Cs4, 0.25], [15, B3, 1],
-  // Line 5: "Twinkle twinkle little star"
+  // Line 5: "Twinkle twinkle little star" - A A E E F# F# E(hold)
   [16, A3, 0.25], [16.25, A3, 0.25], [17, E4, 0.25], [17.25, E4, 0.25],
-  [18, E4, 0.25], [18.25, E4, 0.25], [19, E4, 1],
+  [18, Fs4, 0.25], [18.25, Fs4, 0.25], [19, E4, 1],
   // Line 6: "How I wonder what you are"
   [20, D4, 0.25], [20.25, D4, 0.25], [21, Cs4, 0.25], [21.25, Cs4, 0.25],
   [22, B3, 0.25], [22.25, B3, 0.25], [23, A3, 1],
@@ -67,8 +67,8 @@ export const twinkleVarA: Song = {
   artist: 'Suzuki',
   difficulty: 'Easy',
   bpm: BPM,
-  noteRange: { lowest: 57, highest: 64, whiteKeysOnly: false },
+  noteRange: { lowest: 57, highest: 66, whiteKeysOnly: false },
   notes,
   pianoNotes,
-  pianoNoteRange: { lowest: 40, highest: 64, whiteKeysOnly: false },
+  pianoNoteRange: { lowest: 40, highest: 66, whiteKeysOnly: false },
 };

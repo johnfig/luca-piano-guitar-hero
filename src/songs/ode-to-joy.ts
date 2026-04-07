@@ -8,7 +8,7 @@ const b = (beat: number) => beatsToSeconds(beat, BPM);
 const D4 = 62, E4 = 64, Fs4 = 66, G4 = 67, A4 = 69, B4 = 71;
 
 // Left hand bass notes
-const D3 = 50, A2 = 45, D2 = 38, G2 = 43, A3 = 57, Fs3 = 54, G3 = 55;
+const D3 = 50, A2 = 45, A3 = 57, G3 = 55;
 
 // ===== RIGHT HAND — Ode to Joy in D major =====
 const rightHand: [number, MidiNote, number][] = [
@@ -26,19 +26,24 @@ const rightHand: [number, MidiNote, number][] = [
   [28, E4, 1.5], [29.5, D4, 0.5], [30, D4, 2],
 ];
 
-// ===== LEFT HAND — bass accompaniment =====
+// ===== LEFT HAND — harmonic bass (one note per melody beat) =====
+// Harmony for "F# F# G A | A G F# E | D D E F# | F#. E E" in D major:
+//   D  D  G  A | A  G  D  A | D  D  A  D | D   A  A
 const leftHand: [number, MidiNote, number][] = [
-  // Line 1: D and A bass
-  [0, D3, 2], [2, G3, 2],
-  [4, D3, 2], [6, A3, 2],
-  // Line 2
-  [8, D3, 2], [10, A3, 2],
+  // Line 1: F#4 F#4 G4 A4
+  [0, D3, 1], [1, D3, 1], [2, G3, 1], [3, A3, 1],
+  // Line 1 cont: A4 G4 F#4 E4
+  [4, A2, 1], [5, G3, 1], [6, D3, 1], [7, A2, 1],
+  // Line 2: D4 D4 E4 F#4
+  [8, D3, 1], [9, D3, 1], [10, A2, 1], [11, D3, 1],
+  // Line 2 cont: F#4. E4 E4
   [12, D3, 2], [14, A2, 2],
   // Line 3: same as line 1
-  [16, D3, 2], [18, G3, 2],
-  [20, D3, 2], [22, A3, 2],
-  // Line 4
-  [24, D3, 2], [26, A3, 2],
+  [16, D3, 1], [17, D3, 1], [18, G3, 1], [19, A3, 1],
+  [20, A2, 1], [21, G3, 1], [22, D3, 1], [23, A2, 1],
+  // Line 4: D4 D4 E4 F#4
+  [24, D3, 1], [25, D3, 1], [26, A2, 1], [27, D3, 1],
+  // Line 4 cont: E4. D4 D4
   [28, A2, 2], [30, D3, 2],
 ];
 
