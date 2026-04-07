@@ -290,6 +290,19 @@ class Renderer {
     ctx.fillStyle = innerGradient;
     ctx.fill();
 
+    // Note name label inside the block
+    if (!note.hit && !note.missed) {
+      const noteName = midiNoteToName(note.songNote.note);
+      const fontSize = Math.max(10, Math.min(14, noteWidth * 0.45));
+      ctx.shadowBlur = 0;
+      ctx.font = `bold ${fontSize}px "Inter", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      const labelY = y + Math.min(noteHeight / 2, fontSize);
+      ctx.fillText(noteName, x + noteWidth / 2, labelY);
+    }
+
     // Brightness pulse as note approaches hit zone
     if (!note.hit && !note.missed && note.y > 0.7) {
       const intensity = (note.y - 0.7) / 0.3;

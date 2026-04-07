@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MidiNote } from '@/types/game';
 import { midiNoteToName, isWhiteKey } from '@/constants/keyboard';
 import { MIDI_49_LOWEST, MIDI_49_HIGHEST } from '@/utils/pianoPositions';
+import { detectChord } from '@/utils/chordDetect';
 import AudioEngine from '@/engine/AudioEngine';
 import InputManager from '@/engine/InputManager';
 
@@ -107,12 +108,22 @@ export default function FreePiano({ inputManager, onBack }: FreePianoProps) {
       {/* Main area — visual feedback */}
       <div className="flex-1 flex items-center justify-center">
         {pressedNotes.size > 0 ? (
-          <div className="text-center">
+          <div className="text-center space-y-4">
+            {/* Chord name */}
+            {(() => {
+              const chord = detectChord(pressedNotes);
+              return chord ? (
+                <div className="text-5xl font-black text-white tracking-wide">
+                  {chord}
+                </div>
+              ) : null;
+            })()}
+            {/* Individual notes */}
             <div className="flex items-center justify-center gap-3 flex-wrap">
               {[...pressedNotes].sort().map(note => (
                 <span
                   key={note}
-                  className="text-3xl font-bold px-4 py-2 rounded-xl"
+                  className="text-2xl font-bold px-3 py-1.5 rounded-xl"
                   style={{
                     color: isWhiteKey(note) ? '#ffffff' : '#a0a0ff',
                     backgroundColor: isWhiteKey(note) ? 'rgba(255,255,255,0.1)' : 'rgba(160,160,255,0.1)',
