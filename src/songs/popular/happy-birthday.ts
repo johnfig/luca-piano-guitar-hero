@@ -4,13 +4,13 @@ import { beatsToSeconds } from '@/utils/beats';
 const BPM = 100;
 const b = (beat: number) => beatsToSeconds(beat, BPM);
 
-const C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, B4 = 71, C5 = 72;
+const C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, C5 = 72;
+const Bb4 = 70; // Bb4 needed for last phrase
 
 // Happy Birthday - Traditional
-// Arranged in C major, white keys only
-// "Happy Birthday to you" x2, "Happy Birthday dear ___", "Happy Birthday to you"
+// In C major — the last phrase uses Bb (b7) which is standard for this song
 const melody: [number, MidiNote, number][] = [
-  // "Hap-py birth-day to you" (pickup into phrase 1)
+  // "Hap-py birth-day to you"
   [0, C4, 0.75],
   [0.75, C4, 0.25],
   [1, D4, 1],
@@ -36,8 +36,8 @@ const melody: [number, MidiNote, number][] = [
   [17, D4, 1],
 
   // "Hap-py birth-day to you"
-  [18.5, B4, 0.75],
-  [19.25, B4, 0.25],
+  [18.5, Bb4, 0.75],
+  [19.25, Bb4, 0.25],
   [20, A4, 1],
   [21, F4, 1],
   [22, G4, 1],
@@ -56,6 +56,6 @@ export const happyBirthday: Song = {
   artist: 'Traditional',
   difficulty: 'Easy',
   bpm: BPM,
-  noteRange: { lowest: 60, highest: 72, whiteKeysOnly: true },
+  noteRange: { lowest: 60, highest: 72, whiteKeysOnly: false },
   notes,
 };

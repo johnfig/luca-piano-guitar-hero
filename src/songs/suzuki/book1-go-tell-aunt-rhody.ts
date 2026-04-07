@@ -4,59 +4,54 @@ import { beatsToSeconds } from '@/utils/beats';
 const BPM = 100;
 const b = (beat: number) => beatsToSeconds(beat, BPM);
 
-// MIDI constants used
-const C4 = 60, D4 = 62, E4 = 64, F4 = 65, G4 = 67, A4 = 69, C5 = 72;
+// Go Tell Aunt Rhody - Traditional
+// Suzuki Book 1 arrangement in G major (F#)
 
-// Piano version constants (G major, lower octave)
-const G3 = 55 as MidiNote;
-const A3 = 57 as MidiNote;
-const B3 = 59 as MidiNote;
+// Right hand MIDI constants
+const D4 = 62, E4 = 64, Fs4 = 66, G4 = 67, A4 = 69, B4 = 71;
 
-// Go Tell Aunt Rhody
-// Traditional melody - the old grey goose is dead
-// Suzuki Book 1 arrangement in C major
-const melody: [number, MidiNote, number][] = [
-  // Phrase 1: "Go tell Aunt Rhody" - E E E D | C D E
-  [0, E4, 1], [1, E4, 1], [2, E4, 1.5], [3.5, D4, 0.5],
-  [4, C4, 1], [5, D4, 1], [6, E4, 2],
-  // Phrase 2: "Go tell Aunt Rhody" - F E D E | D C C
-  [8, F4, 1], [9, E4, 1], [10, D4, 1], [11, E4, 1],
-  [12, D4, 1.5], [13.5, C4, 0.5], [14, C4, 2],
-  // Phrase 3: "The old grey goose is" - E E E D | C D E
-  [16, E4, 1], [17, E4, 1], [18, E4, 1.5], [19.5, D4, 0.5],
-  [20, C4, 1], [21, D4, 1], [22, E4, 2],
-  // Phrase 4: "dead" - D E F E | D C C
-  [24, D4, 1], [25, E4, 1], [26, F4, 1], [27, E4, 1],
-  [28, D4, 1.5], [29.5, C4, 0.5], [30, C4, 2],
+// Left hand MIDI constants
+const G2 = 43, D3 = 50, G3 = 55, C3 = 48, B2 = 47, E3 = 52, A2 = 45;
+
+// ===== RIGHT HAND (authentic G major melody) =====
+const rightHand: [number, MidiNote, number][] = [
+  // Phrase 1: "Go tell Aunt Rhody" - B B B A | G A B
+  [0, B4, 1], [1, B4, 1], [2, B4, 1.5], [3.5, A4, 0.5],
+  [4, G4, 1], [5, A4, 1], [6, B4, 2],
+  // Phrase 2: D5 B A B | A G G
+  [8, D4, 1], [9, B4, 1], [10, A4, 1], [11, B4, 1],
+  [12, A4, 1.5], [13.5, G4, 0.5], [14, G4, 2],
+  // Phrase 3: "The old grey goose is" - B B B A | G A B
+  [16, B4, 1], [17, B4, 1], [18, B4, 1.5], [19.5, A4, 0.5],
+  [20, G4, 1], [21, A4, 1], [22, B4, 2],
+  // Phrase 4: A B D4 B | A G G
+  [24, A4, 1], [25, B4, 1], [26, D4, 1], [27, B4, 1],
+  [28, A4, 1.5], [29.5, G4, 0.5], [30, G4, 2],
 ];
 
-const notes: SongNote[] = melody.map(([beat, note, dur]) => ({
-  time: b(beat),
-  note,
-  duration: b(dur),
+// ===== LEFT HAND (root-fifth bass in G major) =====
+const leftHand: [number, MidiNote, number][] = [
+  // Phrase 1: G chord (root-fifth), C chord, G chord
+  [0, G2, 1], [1, D3, 1], [2, G2, 1], [3, D3, 1],
+  [4, C3, 1], [5, G2, 1], [6, G2, 1], [7, D3, 1],
+  // Phrase 2: Em (E3-B2), D chord (D3-A2), G cadence
+  [8, E3, 1], [9, B2, 1], [10, D3, 1], [11, G2, 1],
+  [12, D3, 1], [13, A2, 1], [14, G2, 1], [15, D3, 1],
+  // Phrase 3: G chord (root-fifth), C chord, G chord
+  [16, G2, 1], [17, D3, 1], [18, G2, 1], [19, D3, 1],
+  [20, C3, 1], [21, G2, 1], [22, G2, 1], [23, D3, 1],
+  // Phrase 4: C chord, D chord, G cadence
+  [24, C3, 1], [25, G3, 1], [26, D3, 1], [27, G2, 1],
+  [28, D3, 1], [29, A2, 1], [30, G2, 2],
+];
+
+const notes: SongNote[] = rightHand.map(([beat, note, dur]) => ({
+  time: b(beat), note, duration: b(dur),
 }));
 
-// Authentic piano version in G major (-5 semitones, lower octave)
-// C4→G3, D4→A3, E4→B3, F4→C4, G4→D4
-const pianoMelody: [number, MidiNote, number][] = [
-  // Phrase 1: "Go tell Aunt Rhody" - B3 B3 B3 A3 | G3 A3 B3
-  [0, B3, 1], [1, B3, 1], [2, B3, 1.5], [3.5, A3, 0.5],
-  [4, G3, 1], [5, A3, 1], [6, B3, 2],
-  // Phrase 2: "Go tell Aunt Rhody" - C4 B3 A3 B3 | A3 G3 G3
-  [8, C4, 1], [9, B3, 1], [10, A3, 1], [11, B3, 1],
-  [12, A3, 1.5], [13.5, G3, 0.5], [14, G3, 2],
-  // Phrase 3: "The old grey goose is" - B3 B3 B3 A3 | G3 A3 B3
-  [16, B3, 1], [17, B3, 1], [18, B3, 1.5], [19.5, A3, 0.5],
-  [20, G3, 1], [21, A3, 1], [22, B3, 2],
-  // Phrase 4: "dead" - A3 B3 C4 B3 | A3 G3 G3
-  [24, A3, 1], [25, B3, 1], [26, C4, 1], [27, B3, 1],
-  [28, A3, 1.5], [29.5, G3, 0.5], [30, G3, 2],
-];
-
-const pianoNotes: SongNote[] = pianoMelody.map(([beat, note, dur]) => ({
-  time: b(beat),
-  note,
-  duration: b(dur),
+const bothHands = [...rightHand, ...leftHand].sort((a, b) => a[0] - b[0]);
+const pianoNotes: SongNote[] = bothHands.map(([beat, note, dur]) => ({
+  time: b(beat), note, duration: b(dur),
 }));
 
 export const goTellAuntRhody: Song = {
@@ -65,8 +60,8 @@ export const goTellAuntRhody: Song = {
   artist: 'Traditional',
   difficulty: 'Easy',
   bpm: BPM,
-  noteRange: { lowest: 60, highest: 72, whiteKeysOnly: true },
+  noteRange: { lowest: 62, highest: 71, whiteKeysOnly: true },
   notes,
   pianoNotes,
-  pianoNoteRange: { lowest: 55, highest: 60, whiteKeysOnly: false },
+  pianoNoteRange: { lowest: 43, highest: 71, whiteKeysOnly: true },
 };
